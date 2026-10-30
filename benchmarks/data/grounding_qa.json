@@ -1,0 +1,714 @@
+{
+  "version": 1,
+  "materials": "tests/fixtures/zh-data-structures",
+  "description": "Self-built gold QA set over the bundled zh-data-structures sample course. answer/answer_terms/gold are read only by the scorer; the benchmark readers receive the question string only. answer_terms are verbatim snippets that a correct extractive answer must contain; probes are deliberately outside the three chapters.",
+  "questions": [
+    {
+      "id": "g01",
+      "question": "顺序表按位序访问第 i 个元素的时间复杂度是多少？",
+      "answer": "O(1)",
+      "evidence_keys": [
+        "按位序访问第 i 个元素：O(1)"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "按位序访问第 i 个元素",
+        "O(1)"
+      ]
+    },
+    {
+      "id": "g02",
+      "question": "顺序表在第 i 个位置插入元素，平均需要移动多少个元素？",
+      "answer": "n/2",
+      "evidence_keys": [
+        "平均移动 n/2 个元素"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "平均移动 n/2 个元素"
+      ]
+    },
+    {
+      "id": "g03",
+      "question": "顺序表删除第 i 个元素平均需要移动多少个元素？",
+      "answer": "(n − 1)/2",
+      "evidence_keys": [
+        "平均移动 (n - 1)/2 个元素"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "平均移动 (n - 1)/2 个元素"
+      ]
+    },
+    {
+      "id": "g04",
+      "question": "已知前驱结点 p，在单链表中其后插入结点 s 的正确语句是什么？",
+      "answer": "s->next = p->next; p->next = s;",
+      "evidence_keys": [
+        "s->next = p->next; p->next = s;"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "s->next = p->next; p->next = s;"
+      ]
+    },
+    {
+      "id": "g05",
+      "question": "带头结点的单链表中头结点有什么作用？",
+      "answer": "不存数据，便于统一插入删除操作",
+      "evidence_keys": [
+        "头结点不存数据，便于统一插入删除操作"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "头结点不存数据，便于统一插入删除操作"
+      ]
+    },
+    {
+      "id": "g06",
+      "question": "单链表按位序访问第 i 个元素为什么只能从头开始逐个后移？",
+      "answer": "单链表不支持随机访问，只能顺序查找，时间复杂度 O(n)",
+      "evidence_keys": [
+        "从头结点开始逐个后移，O(n)"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "从头结点开始逐个后移",
+        "O(n)"
+      ]
+    },
+    {
+      "id": "g07",
+      "question": "顺序表和单链表，频繁按位序查找且长度稳定时应选哪个？",
+      "answer": "顺序表",
+      "evidence_keys": [
+        "频繁按位序查找且长度稳定用顺序表"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "频繁按位序查找且长度稳定用顺序表"
+      ]
+    },
+    {
+      "id": "g08",
+      "question": "顺序表与单链表的存储密度相比如何？",
+      "answer": "顺序表存储密度为 1，单链表小于 1",
+      "evidence_keys": [
+        "存储密度",
+        "小于 1"
+      ],
+      "gold": [
+        [
+          "第1章_线性表.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "存储密度",
+        "小于 1"
+      ]
+    },
+    {
+      "id": "g09",
+      "question": "栈的存取特点是什么？",
+      "answer": "后进先出（LIFO）",
+      "evidence_keys": [
+        "后进先出（LIFO）"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "后进先出（LIFO）"
+      ]
+    },
+    {
+      "id": "g10",
+      "question": "队列的存取特点是什么？",
+      "answer": "先进先出（FIFO）",
+      "evidence_keys": [
+        "先进先出（FIFO）"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "先进先出（FIFO）"
+      ]
+    },
+    {
+      "id": "g11",
+      "question": "顺序栈初始化时栈顶指针 top 的值是多少？",
+      "answer": "-1",
+      "evidence_keys": [
+        "初始化：top = -1"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "初始化：top = -1"
+      ]
+    },
+    {
+      "id": "g12",
+      "question": "顺序栈入栈前如何判断栈满？",
+      "answer": "top == MaxSize − 1",
+      "evidence_keys": [
+        "top == MaxSize - 1"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "top == MaxSize - 1"
+      ]
+    },
+    {
+      "id": "g13",
+      "question": "共享栈的栈满条件是什么？",
+      "answer": "top0 + 1 == top1",
+      "evidence_keys": [
+        "top0 + 1 == top1"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "top0 + 1 == top1"
+      ]
+    },
+    {
+      "id": "g14",
+      "question": "循环队列的判空条件是什么？",
+      "answer": "front == rear",
+      "evidence_keys": [
+        "判空：front == rear"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "front == rear"
+      ]
+    },
+    {
+      "id": "g15",
+      "question": "循环队列牺牲一个单元时判满条件是什么？",
+      "answer": "(rear + 1) % MaxSize == front",
+      "evidence_keys": [
+        "(rear + 1) % MaxSize == front"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "(rear + 1) % MaxSize == front"
+      ]
+    },
+    {
+      "id": "g16",
+      "question": "循环队列的长度如何计算？",
+      "answer": "(rear − front + MaxSize) % MaxSize",
+      "evidence_keys": [
+        "(rear - front + MaxSize) % MaxSize"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "(rear - front + MaxSize) % MaxSize"
+      ]
+    },
+    {
+      "id": "g17",
+      "question": "递归调用时系统使用什么结构保存返回地址和局部变量？",
+      "answer": "栈",
+      "evidence_keys": [
+        "把返回地址和局部变量压入系统栈"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "把返回地址和局部变量压入系统栈"
+      ]
+    },
+    {
+      "id": "g18",
+      "question": "中缀表达式转后缀表达式时，遇到优先级不高于栈顶的运算符应如何处理？",
+      "answer": "先弹出栈顶运算符，再让当前运算符入栈",
+      "evidence_keys": [
+        "遇到优先级不高于栈顶的运算符时先弹出栈顶"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "先弹出栈顶"
+      ]
+    },
+    {
+      "id": "g19",
+      "question": "括号匹配扫描结束后栈为空表示什么？",
+      "answer": "匹配成功",
+      "evidence_keys": [
+        "扫描结束后栈空则匹配成功"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "扫描结束后栈空则匹配成功"
+      ]
+    },
+    {
+      "id": "g20",
+      "question": "栈和队列都是什么类型的线性表？",
+      "answer": "操作受限的线性表",
+      "evidence_keys": [
+        "栈和队列都是操作受限的线性表"
+      ],
+      "gold": [
+        [
+          "第2章_栈和队列.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "操作受限的线性表"
+      ]
+    },
+    {
+      "id": "g21",
+      "question": "二叉树第 i 层至多有多少个结点？",
+      "answer": "2^(i−1)",
+      "evidence_keys": [
+        "第 i 层至多有 2^(i-1) 个结点"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "第 i 层至多有 2^(i-1) 个结点"
+      ]
+    },
+    {
+      "id": "g22",
+      "question": "深度为 k 的二叉树至多有多少个结点？",
+      "answer": "2^k − 1",
+      "evidence_keys": [
+        "深度为 k 的二叉树至多有 2^k - 1 个结点"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "深度为 k 的二叉树至多有 2^k - 1 个结点"
+      ]
+    },
+    {
+      "id": "g23",
+      "question": "二叉树的叶子结点数 n0 与度为 2 的结点数 n2 有什么关系？",
+      "answer": "n0 = n2 + 1",
+      "evidence_keys": [
+        "n0 = n2 + 1"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "n0 = n2 + 1"
+      ]
+    },
+    {
+      "id": "g24",
+      "question": "具有 n 个结点的完全二叉树的深度是多少？",
+      "answer": "⌊log2 n⌋ + 1",
+      "evidence_keys": [
+        "具有 n 个结点的完全二叉树深度为 ⌊log2 n⌋ + 1"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "具有 n 个结点的完全二叉树深度为 ⌊log2 n⌋ + 1"
+      ]
+    },
+    {
+      "id": "g25",
+      "question": "二叉树的先序遍历顺序是什么？",
+      "answer": "根 → 左 → 右",
+      "evidence_keys": [
+        "先序遍历：根 → 左 → 右"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "根 → 左 → 右"
+      ]
+    },
+    {
+      "id": "g26",
+      "question": "二叉树的中序遍历顺序是什么？",
+      "answer": "左 → 根 → 右",
+      "evidence_keys": [
+        "中序遍历：左 → 根 → 右"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "左 → 根 → 右"
+      ]
+    },
+    {
+      "id": "g27",
+      "question": "二叉树的后序遍历顺序是什么？",
+      "answer": "左 → 右 → 根",
+      "evidence_keys": [
+        "后序遍历：左 → 右 → 根"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "左 → 右 → 根"
+      ]
+    },
+    {
+      "id": "g28",
+      "question": "二叉树的层序遍历通常用什么数据结构实现？",
+      "answer": "队列",
+      "evidence_keys": [
+        "层序遍历：按层从上到下、从左到右，用队列实现"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "层序遍历",
+        "用队列实现"
+      ]
+    },
+    {
+      "id": "g29",
+      "question": "由先序序列和中序序列能否唯一确定一棵二叉树？",
+      "answer": "能",
+      "evidence_keys": [
+        "由先序和中序序列可以唯一确定一棵二叉树"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "由先序和中序序列可以唯一确定一棵二叉树"
+      ]
+    },
+    {
+      "id": "g30",
+      "question": "由先序序列和后序序列能否唯一确定一棵二叉树？",
+      "answer": "不能",
+      "evidence_keys": [
+        "但先序和后序不能"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "但先序和后序不能"
+      ]
+    },
+    {
+      "id": "g31",
+      "question": "二叉排序树的中序遍历会得到什么序列？",
+      "answer": "递增序列",
+      "evidence_keys": [
+        "中序遍历得到递增序列"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "递增序列"
+      ]
+    },
+    {
+      "id": "g32",
+      "question": "AVL 树要求任一结点左右子树高度差不超过多少？",
+      "answer": "1",
+      "evidence_keys": [
+        "左右子树高度差不超过 1"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "高度差不超过 1"
+      ]
+    },
+    {
+      "id": "g33",
+      "question": "树中结点数与所有结点的度之和有什么关系？",
+      "answer": "结点数 = 所有结点的度之和 + 1",
+      "evidence_keys": [
+        "树中结点数 = 所有结点的度之和 + 1"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "树中结点数 = 所有结点的度之和 + 1"
+      ]
+    },
+    {
+      "id": "g34",
+      "question": "二叉排序树退化成链表时查找的最坏时间复杂度是多少？",
+      "answer": "O(n)",
+      "evidence_keys": [
+        "最坏（退化成链表）O(n)"
+      ],
+      "gold": [
+        [
+          "第3章_树.md",
+          1
+        ]
+      ],
+      "out_of_material": false,
+      "answer_terms": [
+        "最坏（退化成链表）O(n)"
+      ]
+    },
+    {
+      "id": "p01",
+      "question": "Dijkstra 算法的时间复杂度是多少？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p02",
+      "question": "红黑树插入后最多需要几次旋转？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p03",
+      "question": "哈希表的装填因子如何定义？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p04",
+      "question": "B+ 树和 B 树有什么区别？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p05",
+      "question": "快速排序的最坏时间复杂度是多少？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p06",
+      "question": "堆排序建堆的时间复杂度是多少？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p07",
+      "question": "KMP 算法中 next 数组的含义是什么？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p08",
+      "question": "拓扑排序适用于什么类型的图？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p09",
+      "question": "并查集路径压缩后的时间复杂度是多少？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    },
+    {
+      "id": "p10",
+      "question": "Prim 算法求最小生成树的基本思想是什么？",
+      "answer": null,
+      "evidence_keys": [],
+      "gold": [],
+      "out_of_material": true,
+      "answer_terms": []
+    }
+  ]
+}

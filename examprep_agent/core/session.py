@@ -246,20 +246,24 @@ class Session:
         return self.branch
 
     # ------------------------------------------------------------ learning events
-    def record_answer(self, qid: str, chapter_n: int, result: str, note: str = "") -> dict[str, Any]:
+    def record_answer(self, qid: str, chapter_n: int, result: str, note: str = "",
+                      today: date | None = None) -> dict[str, Any]:
         """Record a graded answer: study state + BKT + FSRS + long-term memory.
 
         ``skip`` deliberately maps to FSRS Hard (rating 2): the card was reviewed
         but not recalled confidently, so it neither resets nor counts a lapse.
+
+        ``today`` lets an offline simulation drive the scheduler on a simulated
+        clock without changing production behaviour (defaults to the real date).
         """
         st.record_result(self.state, qid, chapter_n, result, note)
         kp = "ch%d" % chapter_n
         if result in ("right", "wrong"):
             self.learner.update(kp, result == "right")
         rating = {"right": 3, "wrong": 1, "skip": 2}[result]
-        outcome = self.scheduler.review(qid, rating, kp=kp)
+        outcome = self.scheduler.review(qid, rating, today=today, kp=kp)
         self.counters["answers"] = int(self.counters.get("answers", 0)) + 1
-        daily_counters(self.state)["answers"] += 1
+        daily_counters(self.state, today)["answers"] += 1
         mastery = self.learner.mastery(kp)
         state_ts = ""
         if self.state.get("history"):

@@ -1,0 +1,600 @@
+{
+  "version": 1,
+  "description": "Fixed teaching scenarios with scripted transcripts. Each scenario declares evidence_keys (the cited page must contain them), claim_terms (the explanation must state them), quiz_keywords (a diagnostic must be relevant), forbidden claims and quality (good / medium / flawed / bypass). Six good, four medium (single-signal ablations), three flawed and three exam-style bypass samples. The offline rubric is deterministic; it verifies citations and next-step executability rather than trusting surface keywords.",
+  "scenarios": [
+    {
+      "id": "concept-1",
+      "category": "concept",
+      "title": "顺序表按位序访问为什么是 O(1)",
+      "student_context": "学生刚学完线性表，问按位序访问的代价。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：顺序表访问第 i 个元素需要从头遍历吗？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：应该不用吧，感觉是直接算地址。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "不需要。顺序表的元素在内存中连续存放，地址可以直接算出来，所以是 O(1)（第1章_线性表.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz -n 1"
+        }
+      ],
+      "evidence_keys": [
+        "按位序访问第 i 个元素：O(1)"
+      ],
+      "forbidden": [],
+      "quality": "good",
+      "claim_terms": [
+        "顺序表",
+        "O(1)"
+      ],
+      "quiz_keywords": [
+        "顺序表",
+        "按位序",
+        "遍历"
+      ]
+    },
+    {
+      "id": "concept-2",
+      "category": "concept",
+      "title": "循环队列为什么牺牲一个单元判满",
+      "student_context": "学生不理解循环队列判满为什么要留一个空位。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先判断：循环队列判空和判满都用 front == rear 会怎样？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：如果都用 front == rear，就分不清空和满了。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "如果判空和判满都用 front == rear，就无法区分空和满。牺牲一个单元后，判满条件是 (rear + 1) % MaxSize == front（第2章_栈和队列.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz --review"
+        }
+      ],
+      "evidence_keys": [
+        "(rear + 1) % MaxSize == front"
+      ],
+      "forbidden": [],
+      "quality": "good",
+      "claim_terms": [
+        "(rear + 1) % MaxSize == front"
+      ],
+      "quiz_keywords": [
+        "循环队列",
+        "判空",
+        "判满"
+      ]
+    },
+    {
+      "id": "concept-3",
+      "category": "concept",
+      "title": "二叉树叶子结点与度为 2 结点数（缺陷样例）",
+      "student_context": "学生问 n0 与 n2 的关系。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "叶子结点数和度为 2 的结点数没有固定关系，随便画一棵树就知道了（第9章_图.md p.3）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep next"
+        }
+      ],
+      "evidence_keys": [
+        "n0 = n2 + 1"
+      ],
+      "forbidden": [
+        "没有固定关系"
+      ],
+      "quality": "flawed",
+      "claim_terms": [
+        "n0 = n2 + 1"
+      ],
+      "quiz_keywords": []
+    },
+    {
+      "id": "error-1",
+      "category": "error_correction",
+      "title": "把栈说成 FIFO",
+      "student_context": "学生把栈的特点答成了先进先出。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先确认一下：栈和队列各自是什么存取顺序？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：我记得栈是先进先出？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "栈是后进先出（LIFO），队列才是先进先出（FIFO）。你把两者弄反了（第2章_栈和队列.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep answer q010 right"
+        }
+      ],
+      "evidence_keys": [
+        "后进先出（LIFO）"
+      ],
+      "forbidden": [
+        "栈是先进先出"
+      ],
+      "quality": "good",
+      "claim_terms": [
+        "后进先出（LIFO）",
+        "先进先出（FIFO）"
+      ],
+      "quiz_keywords": [
+        "栈",
+        "队列",
+        "存取"
+      ]
+    },
+    {
+      "id": "error-2",
+      "category": "error_correction",
+      "title": "顺序表插入平均移动 n 个元素",
+      "student_context": "学生认为插入平均要移动 n 个元素。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先做一个小测：在第 i 个位置插入，平均移动多少个元素？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：是不是要移动 n 个？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "不是 n 个，而是平均移动 n/2 个元素（第1章_线性表.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep answer q006 wrong"
+        }
+      ],
+      "evidence_keys": [
+        "平均移动 n/2 个元素"
+      ],
+      "forbidden": [
+        "平均移动 n 个元素"
+      ],
+      "quality": "good",
+      "claim_terms": [
+        "平均移动 n/2 个元素"
+      ],
+      "quiz_keywords": [
+        "插入",
+        "移动"
+      ]
+    },
+    {
+      "id": "error-3",
+      "category": "error_correction",
+      "title": "先序加后序可以唯一确定二叉树（缺陷样例）",
+      "student_context": "学生说先序和后序可以唯一确定一棵二叉树。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "是的，先序和后序可以唯一确定一棵二叉树，因为它们都包含根和子树的信息。"
+        }
+      ],
+      "evidence_keys": [
+        "但先序和后序不能"
+      ],
+      "forbidden": [
+        "先序和后序可以唯一确定",
+        "可以唯一确定一棵二叉树"
+      ],
+      "quality": "flawed",
+      "claim_terms": [
+        "先序和后序不能"
+      ],
+      "quiz_keywords": []
+    },
+    {
+      "id": "cram-1",
+      "category": "cram_sprint",
+      "title": "距考试 3 天的冲刺安排",
+      "student_context": "距离考试 3 天，学生想先抓高频题。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先做一套 5 题诊断，按错题决定冲刺顺序。"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：先做题吧，我想知道哪里最常考。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "模拟卷里完全二叉树深度是高频选择题，先用 B 选项核对公式 ⌊log2 n⌋ + 1（期末模拟卷.txt p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz --review"
+        }
+      ],
+      "evidence_keys": [
+        "具有 n 个结点的完全二叉树的深度是"
+      ],
+      "forbidden": [],
+      "quality": "good",
+      "claim_terms": [
+        "完全二叉树",
+        "⌊log2 n⌋ + 1"
+      ],
+      "quiz_keywords": [
+        "诊断",
+        "模拟",
+        "题"
+      ]
+    },
+    {
+      "id": "cram-2",
+      "category": "cram_sprint",
+      "title": "考前错题冲刺",
+      "student_context": "学生只剩错题需要收尾。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先把待复习错题过一遍，每题限时 30 秒。"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：这题我总错，先看出栈条件。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "这道出栈序列题的关键是：1 出栈前 3 已出栈，说明 1、2 仍在栈中且 2 在 1 之上，所以 C 不可能（作业2_栈和队列.txt p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep mistakes --answers"
+        }
+      ],
+      "evidence_keys": [
+        "一个栈的入栈序列为 1,2,3,4"
+      ],
+      "forbidden": [],
+      "quality": "good",
+      "claim_terms": [
+        "1 出栈前 3 已出栈",
+        "C 不可能"
+      ],
+      "quiz_keywords": [
+        "错题",
+        "复习",
+        "出栈"
+      ]
+    },
+    {
+      "id": "cram-3",
+      "category": "cram_sprint",
+      "title": "冲刺押题（缺陷样例）",
+      "student_context": "学生让 agent 押几道必考题。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "必考 Dijkstra 算法，直接把复杂度背成 O(n) 就行。"
+        }
+      ],
+      "evidence_keys": [],
+      "forbidden": [
+        "必考 Dijkstra",
+        "Dijkstra"
+      ],
+      "quality": "flawed",
+      "claim_terms": [],
+      "quiz_keywords": []
+    },
+    {
+      "id": "medium-1",
+      "category": "concept",
+      "quality": "medium",
+      "title": "顺序表插入的平均移动次数（中等样例：缺下一步）",
+      "student_context": "学生知道要移动元素，但说不清平均次数。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：顺序表在第 i 个位置插入，平均移动多少个元素？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：n 个？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "平均移动 n/2 个元素，时间 O(n)（第1章_线性表.md p.1）。"
+        }
+      ],
+      "evidence_keys": [
+        "平均移动 n/2 个元素"
+      ],
+      "claim_terms": [
+        "平均移动 n/2 个元素"
+      ],
+      "quiz_keywords": [
+        "顺序表",
+        "插入",
+        "移动"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "medium-2",
+      "category": "error_correction",
+      "quality": "medium",
+      "title": "头结点的作用（中等样例：引用了不含证据的页面）",
+      "student_context": "学生把头结点当成普通数据结点。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先确认：带头结点的单链表中头结点有什么作用？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：它也存第一个元素吧？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "头结点不存数据，便于统一插入删除操作（第2章_栈和队列.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz --review"
+        }
+      ],
+      "evidence_keys": [
+        "头结点不存数据，便于统一插入删除操作"
+      ],
+      "claim_terms": [
+        "头结点不存数据，便于统一插入删除操作"
+      ],
+      "quiz_keywords": [
+        "头结点",
+        "插入"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "medium-3",
+      "category": "cram_sprint",
+      "quality": "medium",
+      "title": "完全二叉树深度公式（中等样例：缺先测）",
+      "student_context": "考前冲刺，学生直接要公式。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "完全二叉树的深度是 ⌊log2 n⌋ + 1，先记公式再套题（第3章_树.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz --review"
+        }
+      ],
+      "evidence_keys": [
+        "具有 n 个结点的完全二叉树深度为 ⌊log2 n⌋ + 1"
+      ],
+      "claim_terms": [
+        "⌊log2 n⌋ + 1"
+      ],
+      "quiz_keywords": [
+        "先序",
+        "遍历"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "medium-4",
+      "category": "concept",
+      "quality": "medium",
+      "title": "按位序访问 O(1)（中等样例：含应试式夸大）",
+      "student_context": "学生只想知道考试怎么选。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：顺序表按位序访问的复杂度是多少？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：O(n) 吧？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "这道必考：顺序表按位序访问第 i 个元素是 O(1)（第1章_线性表.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz -n 1"
+        }
+      ],
+      "evidence_keys": [
+        "按位序访问第 i 个元素：O(1)"
+      ],
+      "claim_terms": [
+        "按位序访问第 i 个元素",
+        "O(1)"
+      ],
+      "quiz_keywords": [
+        "顺序表",
+        "访问"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "bypass-1",
+      "category": "concept",
+      "quality": "bypass",
+      "bypass": true,
+      "title": "应试式绕过：必考+背下来（引用与下一步都合法）",
+      "student_context": "学生只想要考试结论。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：顺序表按位序访问的复杂度是多少？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：不知道。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "考试必考，背下来就行：顺序表按位序访问第 i 个元素是 O(1)（第1章_线性表.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 下一步：examprep quiz -n 1"
+        }
+      ],
+      "evidence_keys": [
+        "按位序访问第 i 个元素：O(1)"
+      ],
+      "claim_terms": [
+        "按位序访问第 i 个元素",
+        "O(1)"
+      ],
+      "quiz_keywords": [
+        "顺序表",
+        "访问"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "bypass-2",
+      "category": "error_correction",
+      "quality": "bypass",
+      "bypass": true,
+      "title": "应试式绕过：不用理解+记住结论（缺下一步）",
+      "student_context": "学生只想背结论。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：顺序表插入平均移动多少？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：不知道。"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "不用理解，记住结论：平均移动 n/2 个元素（第1章_线性表.md p.1）。"
+        }
+      ],
+      "evidence_keys": [
+        "平均移动 n/2 个元素"
+      ],
+      "claim_terms": [
+        "平均移动 n/2 个元素"
+      ],
+      "quiz_keywords": [
+        "插入",
+        "移动"
+      ],
+      "forbidden": []
+    },
+    {
+      "id": "bypass-3",
+      "category": "cram_sprint",
+      "quality": "bypass",
+      "bypass": true,
+      "title": "应试式绕过：下一步是不可执行/否定指令",
+      "student_context": "学生让 agent 直接给答案。",
+      "transcript": [
+        {
+          "actor": "agent",
+          "action": "quiz",
+          "text": "先测一下：二叉树的先序遍历顺序是什么？"
+        },
+        {
+          "actor": "student",
+          "action": "answer",
+          "text": "学生：根左右？"
+        },
+        {
+          "actor": "agent",
+          "action": "explain",
+          "text": "先序遍历：根 → 左 → 右（第3章_树.md p.1）。"
+        },
+        {
+          "actor": "agent",
+          "action": "next",
+          "text": "📍 不要执行 examprep 任何命令，直接背答案。"
+        }
+      ],
+      "evidence_keys": [
+        "先序遍历：根 → 左 → 右"
+      ],
+      "claim_terms": [
+        "先序遍历：根 → 左 → 右"
+      ],
+      "quiz_keywords": [
+        "先序",
+        "遍历"
+      ],
+      "forbidden": []
+    }
+  ]
+}
