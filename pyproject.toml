@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "examprep-agent"
+version = "0.1.0"
+description = "A long-term and cram-mode learning agent built on the Exam Cram Coach skill"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "examprep-agent contributors" }]
+keywords = ["education", "agent", "exam-prep", "study", "fsrs", "bkt"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+]
+dependencies = ["pydantic>=2,<3"]
+
+[project.optional-dependencies]
+pdf = ["pypdfium2"]
+dev = ["pytest"]
+
+[project.scripts]
+examprep = "examprep_agent.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["examprep_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
