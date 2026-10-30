@@ -11,6 +11,7 @@ https://github.com/ZeKaiNie/universal-examprep-skill
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import struct
@@ -272,9 +273,64 @@ def extract_office_media(path: str, out_dir: str, stem: str) -> list[dict[str, A
 # ---------------------------------------------------------------- driver
 
 def safe_stem(rel: str) -> str:
-    """A short, filesystem-safe file stem for generated figure names."""
+    """A short, filesystem-safe, **collision-resistant** stem for figure names.
+
+    ``rel`` is the source's workspace-relative path, so two files that share a
+    basename (``a.docx`` and ``sub/a.docx``) must not map to the same output
+    path.  A short digest of the full relative path is appended; it is stable
+    across runs and across serial/parallel ingestion.
+    """
     stem = os.path.splitext(os.path.basename(rel))[0]
-    return re.sub(r"[^\w\-]+", "_", stem).strip("_")[:40] or "file"
+    stem = re.sub(r"[^\w\-]+", "_", stem).strip("_")[:32] or "file"
+    digest = hashlib.sha1(rel.replace("\\", "/").encode("utf-8", "replace")).hexdigest()[:8]
+    return "%s_%s" % (stem, digest)
+
+
+def extract_source_figures(
+    src: Source,
+    out_dir: str,
+    pdfium_ok: bool | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, set[int]], dict[str, dict[int, PdfPageInfo]]]:
+    """Extract the figures of one source (worker-safe, no shared mutable state)."""
+    records: list[dict[str, Any]] = []
+    scan_pages: dict[str, set[int]] = {}
+    pdf_infos: dict[str, dict[int, PdfPageInfo]] = {}
+    if src.error or src.kind == "figure":
+        return records, scan_pages, pdf_infos
+    if pdfium_ok is None:
+        pdfium_ok = has_pdfium()
+    ext = os.path.splitext(src.path)[1].lower()
+    stem = safe_stem(src.rel)
+    if ext in (".pptx", ".docx"):
+        for rec in extract_office_media(src.path, out_dir, stem):
+            rec["file"] = src.rel
+            records.append(rec)
+    elif ext == ".pdf" and pdfium_ok:
+        infos = analyze_pdf(src.path)
+        pdf_infos[src.rel] = infos
+        scans = {n for n, info in infos.items() if info.scan}
+        if scans:
+            scan_pages[src.rel] = scans
+        for n, info in infos.items():
+            for k, box in enumerate(info.figures, 1):
+                name = "%s_p%d_%d.png" % (stem, n, k)
+                w, h = render_region(src.path, n, box, os.path.join(out_dir, name))
+                records.append({"file": src.rel, "page": n, "path": FIG_DIR + "/" + name, "kind": "figure",
+                                "box": [round(v) for v in box], "w": w, "h": h})
+    return records, scan_pages, pdf_infos
+
+
+def clean_figure_dir(materials: str, ws: str) -> None:
+    """Move old crops to the workspace trash (never a hard delete)."""
+    out_dir = os.path.join(ws, FIG_DIR)
+    os.makedirs(out_dir, exist_ok=True)
+    from ..security.trash import TrashManager
+    trash = TrashManager(ws, materials)
+    for old in os.listdir(out_dir):
+        try:
+            trash.delete(os.path.join(out_dir, old), reason="figure regeneration")
+        except (OSError, ValueError):
+            continue
 
 
 def extract_figures(
@@ -288,41 +344,17 @@ def extract_figures(
     pdf_infos: {rel: {page: PdfPageInfo}} for later question crops.
     """
     out_dir = os.path.join(ws, FIG_DIR)
-    os.makedirs(out_dir, exist_ok=True)
-    # Regeneration must not hard-delete: old crops move to the workspace trash.
-    from ..security.trash import TrashManager
-    trash = TrashManager(ws, materials)
-    for old in os.listdir(out_dir):
-        try:
-            trash.delete(os.path.join(out_dir, old), reason="figure regeneration")
-        except (OSError, ValueError):
-            continue
+    clean_figure_dir(materials, ws)
     records: list[dict[str, Any]] = []
     scan_pages: dict[str, set[int]] = {}
     pdf_infos: dict[str, dict[int, PdfPageInfo]] = {}
     pdfium_ok = has_pdfium()
     for src in sources:
-        if src.error or src.kind == "figure":
-            continue
-        ext = os.path.splitext(src.path)[1].lower()
-        stem = safe_stem(src.rel)
         try:
-            if ext in (".pptx", ".docx"):
-                for rec in extract_office_media(src.path, out_dir, stem):
-                    rec["file"] = src.rel
-                    records.append(rec)
-            elif ext == ".pdf" and pdfium_ok:
-                infos = analyze_pdf(src.path)
-                pdf_infos[src.rel] = infos
-                scans = {n for n, info in infos.items() if info.scan}
-                if scans:
-                    scan_pages[src.rel] = scans
-                for n, info in infos.items():
-                    for k, box in enumerate(info.figures, 1):
-                        name = "%s_p%d_%d.png" % (stem, n, k)
-                        w, h = render_region(src.path, n, box, os.path.join(out_dir, name))
-                        records.append({"file": src.rel, "page": n, "path": FIG_DIR + "/" + name, "kind": "figure",
-                                        "box": [round(v) for v in box], "w": w, "h": h})
+            recs, scans, infos = extract_source_figures(src, out_dir, pdfium_ok)
+            records.extend(recs)
+            scan_pages.update(scans)
+            pdf_infos.update(infos)
         except Exception as exc:  # one bad file must not stop setup
             src.warnings.append("figures_failed: %s" % exc)
     return records, scan_pages, pdf_infos

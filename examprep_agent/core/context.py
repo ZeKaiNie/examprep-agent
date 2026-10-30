@@ -20,7 +20,7 @@ import re
 from dataclasses import dataclass
 from typing import Sequence
 
-from .provider import ChatMessage, ModelProvider, ProviderError
+from .provider import ChatMessage, ModelProvider, ProviderError, Usage
 from ..tools import guard as gd
 
 _CJK_RE = re.compile(r"[㐀-䶿一-鿿぀-ヿ가-힯]")
@@ -39,17 +39,16 @@ _SUMMARY_HEADER = (
 
 
 def _sanitize_summary_text(text: str) -> str:
-    """Replace lines that address an AI, so a summarised injection cannot persist."""
+    """Remove AI-directed sentences (including cross-line splits) from a summary.
+
+    Uses the shared guard sanitiser: the text is scanned after newline
+    normalisation, every line of a matched sentence is removed, and a summary
+    that is still suspicious after repeated removal is discarded entirely.
+    """
     if not text:
         return ""
-    flagged = set(gd.flagged_lines(text, limit=max(1, text.count("\n") + 1)))
-    if not flagged:
-        return text
-    lines = text.split("\n")
-    for i in flagged:
-        if 0 <= i < len(lines):
-            lines[i] = "[flagged line omitted]"
-    return "\n".join(lines)
+    clean, _dropped, _discarded = gd.sanitize_text(text)
+    return clean
 
 
 def estimate_tokens(text: str) -> int:
@@ -132,6 +131,8 @@ class CompactionResult:
     system_trimmed: bool = False
     material_trimmed: bool = False
     truncated_messages: int = 0
+    prompt_tokens: int = 0       # compaction model call (provider path only)
+    completion_tokens: int = 0
 
 
 class ContextEngine:
@@ -237,6 +238,8 @@ class ContextEngine:
         truncated_messages = 0
         removed = 0
         used_provider = False
+        prompt_tokens = 0
+        completion_tokens = 0
 
         if self.system and self.system_tokens() > self.budget.system_tokens:
             self.system = _truncate_to_tokens(self.system, self.budget.system_tokens)
@@ -258,11 +261,13 @@ class ContextEngine:
             keep = len(self.history) - start
             if keep < len(self.history):
                 old, tail = self.history[: len(self.history) - keep], self.history[-keep:]
-                summary, used_provider = self._summarize(old)
+                summary, used_provider, usage = self._summarize(old)
                 self.summary = summary
                 self.history = tail
                 removed = len(old)
                 changed = True
+                prompt_tokens = int(usage.get("prompt_tokens", 0))
+                completion_tokens = int(usage.get("completion_tokens", 0))
             truncated_messages = self._enforce_history_budget()
             changed = changed or truncated_messages > 0
 
@@ -276,6 +281,8 @@ class ContextEngine:
             system_trimmed=system_trimmed,
             material_trimmed=material_trimmed,
             truncated_messages=truncated_messages,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         )
 
     def _tail_size(self) -> int:
@@ -330,8 +337,12 @@ class ContextEngine:
                 truncated += 1
         return truncated
 
-    def _summarize(self, old: Sequence[ChatMessage]) -> tuple[str, bool]:
-        """Merge previous summary + evicted messages; fall back deterministically."""
+    def _summarize(self, old: Sequence[ChatMessage]) -> tuple[str, bool, dict[str, int]]:
+        """Merge previous summary + evicted messages; fall back deterministically.
+
+        The provider path additionally returns the compaction call's token usage
+        so the event log (and therefore ``examprep costs``) sees the full spend.
+        """
         transcript = "\n".join(
             "%s: %s" % (m.role, m.content) for m in old if m.content
         )
@@ -351,17 +362,38 @@ class ContextEngine:
                 text = response.content.strip()
                 if text:
                     text = _sanitize_summary_text(text)
-                    return _truncate_to_tokens(text, self._summary_budget()), True
+                    usage = response.usage
+                    if usage is None or usage.total_tokens <= 0:
+                        usage = Usage(
+                            prompt_tokens=estimate_tokens(
+                                "\n".join(message.content for message in prompt)),
+                            completion_tokens=estimate_tokens(text),
+                        )
+                    return (
+                        _truncate_to_tokens(text, self._summary_budget()),
+                        True,
+                        {"prompt_tokens": usage.prompt_tokens,
+                         "completion_tokens": usage.completion_tokens},
+                    )
             except ProviderError:
                 pass
         return _truncate_to_tokens(_sanitize_summary_text(self._deterministic_summary(old)),
-                                   self._summary_budget()), False
+                                   self._summary_budget()), False, {}
 
     def _deterministic_summary(self, old: Sequence[ChatMessage]) -> str:
-        """Offline fallback: keep a bounded, role-tagged excerpt of every evicted message."""
+        """Offline fallback: keep a bounded, role-tagged excerpt of every evicted message.
+
+        An existing summary is carried at the front verbatim.  Re-wrapping it
+        in a new header on every merge (the previous behaviour) made each
+        generation spend more of the fixed summary budget on repeated headers,
+        eventually pushing the earliest facts out entirely.  Keeping the
+        previous summary first means truncation drops the *newest* appended
+        lines, while the oldest facts survive across incremental merges.
+        """
         lines: list[str] = []
-        if self.summary:
-            lines.append("Earlier summary: " + self.summary)
+        previous = bool(self.summary)
+        if previous:
+            lines.append(self.summary)
         for message in old:
             content = " ".join(message.content.split())
             if not content:
@@ -369,7 +401,8 @@ class ContextEngine:
             if len(content) > 240:
                 content = content[:239].rstrip() + "…"
             lines.append("%s: %s" % (message.role, content))
-        return "（确定性摘要 / deterministic summary）\n" + "\n".join(lines)
+        body = "\n".join(lines)
+        return body if previous else "（确定性摘要 / deterministic summary）\n" + body
 
     # ------------------------------------------------------------ rendering
     def build_messages(self) -> list[ChatMessage]:

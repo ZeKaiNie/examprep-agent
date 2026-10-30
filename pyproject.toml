@@ -24,10 +24,19 @@ dependencies = ["pydantic>=2,<3"]
 
 [project.optional-dependencies]
 pdf = ["pypdfium2"]
+# P2 service transports. The core runtime still depends only on pydantic;
+# both extras import lazily and fail with an install hint when absent.
+serve = ["fastapi>=0.110,<1", "httpx>=0.27", "uvicorn>=0.30"]
+mcp = ["mcp>=2,<3"]
+# Only for the time-boxed LangGraph spike in spikes/; never a default runtime
+# dependency and never imported by examprep_agent.
+spike = ["langgraph>=1.0", "packaging>=23"]
 dev = ["pytest"]
 
 [project.scripts]
 examprep = "examprep_agent.cli:main"
+examprep-mcp = "examprep_agent.interfaces.mcp_server:main"
+examprep-serve = "examprep_agent.interfaces.http:main"
 
 [tool.setuptools.packages.find]
 include = ["examprep_agent*"]

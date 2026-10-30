@@ -56,13 +56,32 @@ class BM25:
         return [(i, sc[i]) for i in order[:k] if sc[i] > 0]
 
 
-def build_chunks(chapters: Iterable[Chapter]) -> list[dict[str, Any]]:
-    """Flatten chapter blocks into BM25-sized chunks carrying file/page provenance."""
+def chunks_for_chapter(ch: "Chapter") -> list[dict[str, Any]]:
+    """BM25-sized chunks of one chapter, carrying file/page provenance."""
+    out: list[dict[str, Any]] = []
+    for rel, page, text in ch.blocks:
+        for piece in pack(text, CHUNK_CHARS):
+            out.append({"chapter": ch.number, "file": rel, "page": page, "text": piece})
+    return out
+
+
+def build_chunks(
+    chapters: Iterable["Chapter"],
+    per_chapter: Sequence[Sequence[dict[str, Any]]] | None = None,
+) -> list[dict[str, Any]]:
+    """Flatten chapter blocks into BM25-sized chunks carrying file/page provenance.
+
+    ``per_chapter`` may carry chunks already built by a worker pool; ordering is
+    always chapter order, so the parallel and serial results are identical.
+    """
+    chapters = list(chapters)
+    if per_chapter is None:
+        per_chapter = [chunks_for_chapter(ch) for ch in chapters]
+    if len(per_chapter) != len(chapters):
+        raise ValueError("per_chapter and chapters must be parallel sequences")
     chunks: list[dict[str, Any]] = []
-    for ch in chapters:
-        for rel, page, text in ch.blocks:
-            for piece in pack(text, CHUNK_CHARS):
-                chunks.append({"chapter": ch.number, "file": rel, "page": page, "text": piece})
+    for part in per_chapter:
+        chunks.extend(part)
     return chunks
 
 

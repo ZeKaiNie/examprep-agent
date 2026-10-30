@@ -265,6 +265,40 @@ def test_prompt_includes_system_history_and_task() -> None:
     assert result.content == "ok"
 
 
+def test_compaction_provider_usage_counts_against_the_hard_budget() -> None:
+    """I1: a compaction model call is real spend, not just a log field."""
+
+    class CompactionProvider:
+        name = "compaction-provider"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages, tools=(), *, temperature=None):  # noqa: ANN001, ARG002
+            self.calls += 1
+            if self.calls == 1:  # the summariser call
+                return ModelResponse(content="a compact summary", usage=Usage(5000, 5000))
+            return ModelResponse(content="final", usage=Usage(1, 1))
+
+    provider = CompactionProvider()
+    context = ContextEngine(max_tokens=200, provider=provider, keep_recent_messages=2)
+    context.set_system("sys")
+    context.extend([ChatMessage(role="user", content="old fact %d " % i + "x" * 200)
+                    for i in range(8)])
+    result = run_agent(
+        provider=provider,
+        task="teach",
+        tools=make_tools(),
+        context=context,
+        limits=LoopLimits(max_steps=3, max_total_tokens=400),
+    )
+    assert result.stopped == "token_budget"
+    assert provider.calls == 1  # the over-budget compaction call; no model turn ran
+    assert result.usage.total_tokens == 10_000
+    compaction = [e for e in result.events if e["event"] == "compaction"]
+    assert compaction and compaction[0]["spent_tokens"] == 10_000
+
+
 def test_context_engine_is_compacted_before_each_model_call(tmp_path: Path) -> None:
     log_path = tmp_path / "agent.jsonl"
     context = ContextEngine(max_tokens=200, keep_recent_messages=2)

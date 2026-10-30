@@ -185,9 +185,24 @@ def test_summary_injection_is_removed_and_never_gains_system_priority() -> None:
     assert all("ignore all previous instructions" not in m.content.lower() for m in messages)
     summary = next(m for m in messages if "Conversation summary" in m.content)
     assert summary.role == "user"
-    assert "[flagged line omitted]" in summary.content
+    # The flagged sentence is removed, not merely marked; the clean line stays
+    # and the whole summary is rendered behind a material fence.
+    assert "The learner knows LIFO" in summary.content
+    assert "<<<MATERIAL " in summary.content and "MATERIAL>>> " in summary.content
     outside = re.sub(r"<<<MATERIAL [0-9a-f]{6}\n.*?\nMATERIAL>>> [0-9a-f]{6}", "", summary.content, flags=re.S)
     assert "ignore all previous instructions" not in outside.lower()
+
+
+def test_incremental_deterministic_summary_keeps_the_earliest_fact() -> None:
+    """I7 redo finding: repeated merges must not spend the budget on headers."""
+    engine = ContextEngine(max_tokens=800, keep_recent_messages=4)
+    engine.set_system("system prompt")
+    for index in range(40):
+        engine.add(ChatMessage(role="user", content="fact-%d: %s" % (index, "y" * 120)))
+        engine.compact()
+    assert "fact-0" in engine.summary
+    assert engine.summary_tokens() <= engine.budget.history_tokens * 0.35
+    assert engine.history_tokens() <= engine.budget.history_tokens
 
 
 def test_report_tracks_three_compartments() -> None:

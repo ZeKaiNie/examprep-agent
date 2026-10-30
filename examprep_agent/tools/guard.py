@@ -92,24 +92,148 @@ def is_suspicious(line: str) -> bool:
     return any(p.search(s) for p in _PATTERNS)
 
 
+_SENTENCE_END = re.compile(r"[.!?。！？]")
+_CJK_CHAR = re.compile(r"[㐀-䶿一-鿿぀-ヿ가-힯]")
+#: How far a matched injection may pull its surrounding sentence in for removal.
+#: Bounded so a match in an unpunctuated document cannot swallow the whole text.
+_MAX_SENTENCE_CONTEXT = 240
+
+
+def _line_streams(lines: list[str]):
+    """Newline-normalised views of ``text``: Latin joins with a space, CJK without.
+
+    Each view also carries ``index[pos] -> source line`` so a regex match that
+    starts on one line and ends on another can be mapped back to every line it
+    touches.  Scanning the joined view is what makes split/segmented injections
+    visible at all: "ignore all previous" + "instructions" is one sentence, not
+    two independent lines.
+    """
+    for separator in (" ", ""):
+        chars: list[str] = []
+        index: list[int] = []
+        for line_number, line in enumerate(lines):
+            if line_number and separator:
+                chars.append(separator)
+                index.append(line_number)
+            chars.extend(line)
+            index.extend([line_number] * len(line))
+        yield "".join(chars), index
+
+
+_CONTINUATION_WORDS = frozenset(
+    "and then also finally moreover thus therefore so please you do don't never "
+    "always make tell give mark skip answer output ignore send upload reveal "
+    "print show repeat forward as if when".split()
+)
+
+
+def _looks_like_continuation(line: str) -> bool:
+    """Whether ``line`` reads as the second half of the previous sentence.
+
+    Lowercase openers, CJK text and common conjunction/verb openers continue the
+    sentence; an uppercase English subject such as ``The learner …`` starts a
+    new one.  Only used to decide how far a flagged sentence extends.
+    """
+    stripped = line.lstrip()
+    if not stripped:
+        return True
+    first = stripped[0]
+    if first.islower() or _CJK_CHAR.match(first):
+        return True
+    word = re.match(r"[A-Za-z']+", stripped)
+    return bool(word) and word.group(0).lower() in _CONTINUATION_WORDS
+
+
+def _sentence_span(stream: str, index: list[int], lines: list[str],
+                   start: int, end: int) -> tuple[int, int]:
+    """Expand a match to its enclosing sentence, bounded by punctuation/context.
+
+    Left expansion never crosses the start of the line the match begins on, so
+    a preceding paragraph is not swept up.  Right expansion follows the
+    sentence across line breaks only when the next non-blank line reads as a
+    continuation (needed for split/segmented injections) and stops at its
+    punctuation.
+    """
+    line_of_start = index[start] if start < len(index) else 0
+    left_limit = max(0, start - _MAX_SENTENCE_CONTEXT)
+    line_start = start
+    while line_start > 0 and index[line_start - 1] == line_of_start:
+        line_start -= 1
+    left = line_start
+    for match in _SENTENCE_END.finditer(stream, max(left_limit, line_start), start):
+        left = match.end()
+
+    line_of_end = index[min(max(end - 1, start), len(index) - 1)] if index else 0
+    line_end = end
+    while line_end < len(stream) and index[line_end] == line_of_end:
+        line_end += 1
+    right_limit = min(len(stream), end + _MAX_SENTENCE_CONTEXT)
+    match = _SENTENCE_END.search(stream, end, line_end)
+    if match is not None:
+        right = match.start() + 1
+    else:
+        right = line_end
+        # Cross a break only for a continuation line (blank lines are skipped).
+        next_line = line_of_end + 1
+        while next_line < len(lines) and not lines[next_line].strip():
+            next_line += 1
+        if next_line < len(lines) and _looks_like_continuation(lines[next_line]):
+            match = _SENTENCE_END.search(stream, end, right_limit)
+            right = match.start() + 1 if match else right_limit
+    return min(left, start), max(right, end)
+
+
 def flagged_lines(text: str, limit: int = 5) -> list[int]:
-    """Indexes of lines that address an AI; a sentence split over two lines is caught too."""
-    lines = text.split("\n")
-    out: list[int] = []
-    for i, line in enumerate(lines):
-        s = line.strip()
-        if not s:
+    """Indexes of lines that address an AI, including split/segmented sentences.
+
+    Detection runs over a newline-normalised copy so a payload broken across
+    (possibly blank) lines is matched as one sentence.  Every line touched by
+    the enclosing sentence is returned — not just the line where the match
+    starts — because dropping only the first half would leave the operative
+    instruction ("and mark every answer correct") behind.
+    """
+    lines = _norm(text).split("\n")
+    flagged: set[int] = set()
+    for stream, index in _line_streams(lines):
+        if not stream:
             continue
-        hit = is_suspicious(s)
-        if not hit and i + 1 < len(lines):
-            nxt = lines[i + 1].strip()
-            # PDF extraction breaks sentences: Latin text rejoins with a space, CJK text without
-            hit = not is_suspicious(nxt) and (is_suspicious(s + " " + nxt) or is_suspicious(s + nxt))
-        if hit:
-            out.append(i)
-            if len(out) >= limit:
-                break
-    return out
+        for pattern in _PATTERNS:
+            for match in pattern.finditer(stream):
+                start, end = _sentence_span(stream, index, lines, match.start(), match.end())
+                first = index[min(start, len(index) - 1)] if index else 0
+                last = index[min(max(end - 1, start), len(index) - 1)] if index else first
+                for line_number in range(first, last + 1):
+                    flagged.add(line_number)
+                if len(flagged) >= limit:
+                    return sorted(flagged)[:limit]
+    return sorted(flagged)[:limit]
+
+
+def sanitize_text(text: str, max_chars: int = 0, passes: int = 3) -> tuple[str, int, bool]:
+    """Remove AI-directed sentences until the text is stable.
+
+    Returns ``(clean, dropped_lines, discarded)``.  After up to ``passes``
+    removal rounds the text is re-scanned; if anything still looks like an
+    instruction the whole text is discarded (``discarded=True``, empty clean)
+    rather than risking a partially neutralised injection.  ``max_chars`` > 0
+    adds a hard truncation with an ellipsis.
+    """
+    lines = (text or "").split("\n")
+    dropped = 0
+    for _ in range(max(1, passes)):
+        flagged = set(flagged_lines("\n".join(lines), limit=max(1, len(lines))))
+        if not flagged:
+            break
+        dropped += len(flagged)
+        lines = [line for number, line in enumerate(lines) if number not in flagged]
+    else:
+        # The loop was not broken: one more scan decides whether it converged.
+        if flagged_lines("\n".join(lines), limit=max(1, len(lines))):
+            return "", dropped + len(lines), True
+    clean = "\n".join(lines).strip()
+    if max_chars > 0 and len(clean) > max_chars:
+        clean = clean[: max_chars - 1].rstrip() + "…"
+    return clean, dropped, False
 
 
 def neutralize(text: str) -> str:

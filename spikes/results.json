@@ -1,0 +1,1625 @@
+{
+  "repeats_per_case": 20,
+  "cases": [
+    "resume",
+    "parallel_tools",
+    "compaction"
+  ],
+  "methodology": {
+    "same_workload": "one add+compact / graph-invoke per message on both sides",
+    "same_budget": {
+      "max_tokens": 800,
+      "system_tokens": 120,
+      "material_tokens": 360,
+      "history_tokens": 320,
+      "summary_tokens": 112,
+      "keep_recent_messages": 4
+    },
+    "same_success_predicates": "spikes/common.py resume_success / compaction_success",
+    "restart": "JSON serialise + deserialise into a fresh runtime on both sides",
+    "note": "local FakeProvider micro-benchmark; not end-to-end model latency"
+  },
+  "metrics": {
+    "kernel": {
+      "compaction": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 11.538,
+        "max_latency_ms": 15.889,
+        "operations": 40
+      },
+      "parallel_tools": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 151.056,
+        "max_latency_ms": 153.465,
+        "operations": 3
+      },
+      "resume": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 4.623,
+        "max_latency_ms": 5.021,
+        "operations": 12
+      }
+    },
+    "langgraph": {
+      "compaction": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 107.121,
+        "max_latency_ms": 120.473,
+        "operations": 40
+      },
+      "parallel_tools": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 54.472,
+        "max_latency_ms": 56.063,
+        "operations": 3
+      },
+      "resume": {
+        "repeats": 20,
+        "success_rate": 1.0,
+        "median_latency_ms": 40.455,
+        "max_latency_ms": 81.047,
+        "operations": 12
+      }
+    }
+  },
+  "code_size": {
+    "kernel_core_lines": 1390,
+    "kernel_adapter": 144,
+    "langgraph_adapter": 246,
+    "note": "adapter lines are not an equivalent implementation-cost comparison"
+  },
+  "langgraph_available": true,
+  "langgraph_import_error": "",
+  "dependency_footprint": {
+    "root": "langgraph",
+    "transitive_distributions": 38,
+    "names": [
+      "annotated-types",
+      "anyio",
+      "certifi",
+      "charset-normalizer",
+      "distro",
+      "h11",
+      "httpcore",
+      "httpcore2",
+      "httpx",
+      "httpx2",
+      "idna",
+      "jsonpatch",
+      "jsonpointer",
+      "langchain-core",
+      "langchain-protocol",
+      "langgraph",
+      "langgraph-checkpoint",
+      "langgraph-prebuilt",
+      "langgraph-sdk",
+      "langsmith",
+      "orjson",
+      "ormsgpack",
+      "packaging",
+      "pydantic",
+      "pydantic-core",
+      "pyyaml",
+      "requests",
+      "requests-toolbelt",
+      "sniffio",
+      "tenacity",
+      "truststore",
+      "typing-extensions",
+      "typing-inspection",
+      "urllib3",
+      "uuid-utils",
+      "websockets",
+      "xxhash",
+      "zstandard"
+    ],
+    "not_installed": []
+  },
+  "outcomes": [
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 5.020691000027,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.7280420003517065,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.671957999562437,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.63724600012938,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.759098999784328,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.621052000402415,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.631808000340243,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.6374670000659535,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.626289000043471,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.614622000190138,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.619730000740674,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.609594999237743,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.625007000868209,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.619780000211904,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.61721600004239,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.621091999979399,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.6151329997883295,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.610666000189667,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.749014000481111,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 4.583776000799844,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1624,
+        "steps": 12,
+        "history_tokens": 307
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 45.507300999815925,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 39.35528300007718,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 39.30456700072682,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 39.33244800009561,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 38.34947399991506,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 37.14456699981383,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 42.27445099968463,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 41.09905899986188,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 78.71581300059916,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 73.49654399968131,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 81.04651900066528,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 40.94231299950479,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 41.17769699951168,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 38.01286900034029,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 40.08576800060837,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 38.970435000010184,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 40.99933900033648,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 38.61677500026417,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 40.823495000040566,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "resume",
+      "success": true,
+      "latency_ms": 38.122893999570806,
+      "detail": {
+        "summary_tokens": 112,
+        "kept_messages": 5,
+        "checkpoint_bytes": 1304,
+        "steps": 12,
+        "history_tokens": 306
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.23270799995225,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.0780260005049,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.96234300017386,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.1080709997259,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.95619299972896,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 152.09420999963186,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.98373500040907,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.93634299955738,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.83599199988384,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.89587300008134,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.13570300036372,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 153.46479599975282,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 152.20840100028,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.02199200009636,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.1358329998984,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.03903800081753,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.02949300035107,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 150.91424000002007,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.09524200033775,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 151.07348899982753,
+      "detail": {
+        "tool_results": 3,
+        "stopped": "final",
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 56.06322400035424,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.431417000159854,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 55.19173700031388,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.35720500008756,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.74180199962575,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.19429100038542,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.36301400004595,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 53.97140600052808,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.15923799955635,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.173550000086834,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 55.33837700022559,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.702833000192186,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.693850000148814,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.22843300038949,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.13242899976467,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.10040999959165,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 55.03181699987181,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.51186699974642,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 55.24157199943147,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "parallel_tools",
+      "success": true,
+      "latency_ms": 54.684947000168904,
+      "detail": {
+        "results": 3,
+        "steps": 3
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 15.228412999931606,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 15.888752999671851,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.671667999507918,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 13.521302000299329,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.568783000257099,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.56282400006603,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.521141000230273,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.448952999671747,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.427752000599867,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.466670000118029,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.442955000347865,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.715582999386243,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.53594300012628,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.540399999830697,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.48297400050069,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.521051000272564,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.51782600027218,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.464858000181266,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.562033000700467,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "kernel",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 11.847070999465359,
+      "detail": {
+        "history_tokens": 310,
+        "material_tokens": 360,
+        "system_tokens": 120,
+        "summary_tokens": 112,
+        "kept_messages": 6,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 98.81039500032784,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 93.59805599979154,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 93.25733599962405,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 90.74415600025532,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 91.27512199938792,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 92.59020499939652,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 94.58122100022592,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 101.0009709998485,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 107.61274800006504,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 107.71227800069028,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 111.09785599910538,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 110.27908800042496,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 107.26353399968502,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 112.2472299994115,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 120.47253800028557,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 114.77934900085529,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 108.54259299958358,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 110.7961929992598,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 104.1894729996784,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    },
+    {
+      "adapter": "langgraph",
+      "case": "compaction",
+      "success": true,
+      "latency_ms": 106.97877700022218,
+      "detail": {
+        "history_tokens": 242,
+        "system_tokens": 120,
+        "material_tokens": 360,
+        "summary_tokens": 112,
+        "kept_messages": 4,
+        "steps": 40
+      }
+    }
+  ]
+}

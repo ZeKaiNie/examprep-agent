@@ -176,9 +176,53 @@ def _split_internal(src: Source) -> list[tuple[int, str, list[tuple[str, int, st
     return segments
 
 
-def build_chapters(sources: Iterable[Source]) -> list[Chapter]:
-    """Group teaching sources into numbered chapters; figures attach by file-name number."""
+def source_plan(src: Source) -> dict[str, Any] | None:
+    """Per-file chapter plan used by the sequential and parallel builders.
+
+    Returns ``None`` for files that are not teaching material (questions,
+    solutions, figures, failed reads).  The plan contains only data derived
+    from this one source, so several plans can be computed concurrently and
+    merged in file order with an identical result.
+    """
+    if src.kind not in TEACHING_KINDS or src.error or not src.pages:
+        return None
+    lines = src.text.split("\n")
+    n = number_from_name(src.rel)
+    if n is None:
+        # a numberless file is either one chapter ("Lecture 1: Intro" at the top)
+        # or a whole book to split on its internal chapter headings
+        segments = _split_internal(src)
+        if segments:
+            return {"kind": "segments", "segments": segments}
+    first_page = src.pages[0].text.split("\n")
+    head_n, head_title = _number_and_title_from_head(first_page)
+    if n is None:
+        n = head_n
+    title = head_title or guess_title(lines)
+    return {
+        "kind": "single",
+        "n": n,
+        "title": title,
+        "rel": src.rel,
+        "blocks": [(src.rel, p.number, p.text) for p in src.pages],
+    }
+
+
+def build_chapters(
+    sources: Iterable[Source],
+    plans: Iterable[dict[str, Any] | None] | None = None,
+) -> list[Chapter]:
+    """Group teaching sources into numbered chapters; figures attach by file-name number.
+
+    ``plans`` may carry precomputed :func:`source_plan` results (the parallel
+    pipeline computes them in a thread pool).  When omitted the plans are
+    derived sequentially, which is exactly what the original implementation
+    did.
+    """
     sources = list(sources)
+    plans = list(plans) if plans is not None else [source_plan(s) for s in sources]
+    if len(plans) != len(sources):
+        raise ValueError("plans and sources must be parallel sequences")
     numbered: dict[int, Chapter] = {}
     unnumbered: list[tuple[str, str, list[tuple[str, int, str]]]] = []
     figures = [s for s in sources if s.kind == "figure"]
@@ -196,25 +240,14 @@ def build_chapters(sources: Iterable[Source]) -> list[Chapter]:
         if rel not in ch.sources:
             ch.sources.append(rel)
 
-    for src in sources:
-        if src.kind not in TEACHING_KINDS or src.error or not src.pages:
+    for src, plan in zip(sources, plans):
+        if plan is None:
             continue
-        lines = src.text.split("\n")
-        n = number_from_name(src.rel)
-        if n is None:
-            # a numberless file is either one chapter ("Lecture 1: Intro" at the top)
-            # or a whole book to split on its internal chapter headings
-            segments = _split_internal(src)
-            if segments:
-                for seg_n, seg_title, seg_blocks in segments:
-                    add(seg_n, seg_title, src.rel, seg_blocks)
-                continue
-        first_page = src.pages[0].text.split("\n")
-        head_n, head_title = _number_and_title_from_head(first_page)
-        if n is None:
-            n = head_n
-        title = head_title or guess_title(lines)
-        add(n, title, src.rel, [(src.rel, p.number, p.text) for p in src.pages])
+        if plan["kind"] == "segments":
+            for seg_n, seg_title, seg_blocks in plan["segments"]:
+                add(seg_n, seg_title, src.rel, seg_blocks)
+            continue
+        add(plan["n"], plan["title"], plan["rel"], plan["blocks"])
 
     chapters = [numbered[k] for k in sorted(numbered)]
     next_n = (max(numbered) + 1) if numbered else 1

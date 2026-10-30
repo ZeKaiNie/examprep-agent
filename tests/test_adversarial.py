@@ -215,7 +215,13 @@ class TestPoisonedMaterial:
             "outside_write_needs_grant", "materials_read_only",
             "secret_in_arguments", "dangerous_command",
         }
-        assert all(event["decision"] == "deny" for event in decisions)
+        run_decisions = [event for event in decisions
+                         if event.get("tool") in {"write_file", "delete_path",
+                                                  "send_report", "run_command"}]
+        assert run_decisions and all(event["decision"] == "deny" for event in run_decisions)
+        # Setup itself is an audited host write (I2), recorded as an allow.
+        assert any(event.get("tool") == "cli.setup" and event["decision"] == "allow"
+                   for event in decisions)
 
     def test_renamed_path_arguments_and_control_files_are_denied(self, poisoned_course: Path) -> None:
         """The same actions with non-canonical argument names must also fail."""
@@ -255,9 +261,9 @@ class TestPoisonedMaterial:
         assert not outside.exists()
         assert (ws / "study_state.json").exists()
 
-    def test_production_explain_registry_exposes_only_read_tools(
+    def test_production_explain_registry_exposes_guarded_file_tools(
             self, poisoned_course: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Documents the deliberate P1/P2 boundary (see P1_REPORT)."""
+        """P2 debt item: the production registry now carries the guarded file tools."""
         from examprep_agent.core.loop import LoopResult
 
         assert run_cli("setup", str(poisoned_course), "--lang", "en")[0] == 0
@@ -273,12 +279,17 @@ class TestPoisonedMaterial:
         cli._explain_slice(session, cli.W("en"), {"n": 1, "title": "x", "part": 0},
                            "material", [("ch1.md p.1", "material")])
         tools = captured["tools"]
-        assert "write_file" not in tools and "delete_path" not in tools
-        assert all(tool.access == "read" for tool in tools._tools.values())
+        assert {"read_file", "write_file", "list_dir", "make_dir", "delete_path"} <= set(
+            tool.name for tool in tools.entries())
+        assert tools.get("read_file").risk is RiskLevel.L0
+        assert tools.get("write_file").risk is RiskLevel.L1
+        # No tool can reach above the teaching loop's L1 ceiling (P2 sub-agent rule
+        # also applies here: the registry's gate still fences every path).
+        assert all(tool.risk <= RiskLevel.L1 for tool in tools.entries())
 
     def test_production_explain_loop_cannot_write_even_when_induced(
             self, poisoned_course: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """End-to-end on the real production tool surface: no write tool exists."""
+        """The real production tool surface is wired, but still path-fenced."""
         assert run_cli("setup", str(poisoned_course), "--lang", "en")[0] == 0
         ws = poisoned_course / "exam-cram"
         outside = poisoned_course.parent / "prod-pwn.txt"
@@ -301,7 +312,10 @@ class TestPoisonedMaterial:
         events = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
         results = [event for event in events if event["event"] == "tool_result"]
         assert len(results) == 2 and all(event["ok"] is False for event in results)
-        assert all("unknown tool" in event["observation"] for event in results)
+        payloads = [json.loads(event["observation"]) for event in results]
+        assert [payload["code"] for payload in payloads] == [
+            "outside_write_needs_grant", "internal_path_read_only",
+        ]
 
     def test_quiz_bank_injection_never_escapes_the_fence(self, poisoned_course: Path) -> None:
         assert run_cli("setup", str(poisoned_course), "--lang", "en")[0] == 0

@@ -44,6 +44,10 @@ DEFAULT_SYSTEM_PROMPT = (
     "If the material does not cover a question, say so instead of guessing."
 )
 
+#: Events that carry a real provider ``usage`` block.  Compaction can call the
+#: summariser model, so its tokens are part of the run's spend and its summary.
+_USAGE_EVENTS = frozenset({"model_response", "compaction"})
+
 #: Model-supplied keys that must never reach a tool handler.  They are neither
 #: needed by a well-behaved tool nor safe to forward: a handler such as
 #: ``def delete(path, force=False)`` would otherwise let the model override its
@@ -99,8 +103,17 @@ class ToolRegistry:
     kernel cannot execute an unauthorised high-risk operation either.
     """
 
-    def __init__(self, gate: PermissionGate | None = None) -> None:
+    def __init__(
+        self,
+        gate: PermissionGate | None = None,
+        *,
+        max_risk: RiskLevel | int | str | None = None,
+    ) -> None:
         self.gate = gate
+        #: A sub-agent registry never executes a tool above this ceiling, even
+        #: if one is registered on it.  ``None`` means the parent's own registry
+        #: (no additional ceiling).
+        self.max_risk = RiskLevel.parse(max_risk) if max_risk is not None else None
         self._tools: dict[str, Tool] = {}
 
     def register(
@@ -155,6 +168,23 @@ class ToolRegistry:
         return build(handler)
 
     def _authorize(self, tool: Tool, arguments: Mapping[str, Any], session_id: str) -> Decision:
+        if self.max_risk is not None and tool.risk > self.max_risk:
+            # Sub-agent isolation: the parent hands down a risk ceiling, and a
+            # sub-agent cannot call anything above it even if the tool is
+            # registered locally.  The denial is audited with the same gate log.
+            decision = Decision(
+                allowed=False,
+                risk=tool.risk,
+                effective_risk=self.max_risk,
+                code="risk_exceeds_parent",
+                reason="tool risk %s exceeds the sub-agent ceiling %s"
+                       % (tool.risk.label, self.max_risk.label),
+                tool=tool.name,
+                access=tool.access,
+            )
+            if self.gate is not None and self.gate.audit is not None:
+                self.gate.audit.decision(decision, session_id=session_id, source="subagent")
+            return decision
         if self.gate is not None:
             return self.gate.check(
                 tool.name,
@@ -235,6 +265,23 @@ class ToolRegistry:
     def get(self, name: str) -> Tool | None:
         """Return a registered tool or None."""
         return self._tools.get(name)
+
+    def entries(self) -> list[Tool]:
+        """Registered tools in registration order (used to scope sub-agents)."""
+        return list(self._tools.values())
+
+    def scoped(self, max_risk: RiskLevel | int | str) -> "ToolRegistry":
+        """A child registry sharing the gate, exposing only tools at/below ``max_risk``.
+
+        The child also carries ``max_risk`` itself, so even a later direct
+        registration above the ceiling is denied at execution time.
+        """
+        ceiling = RiskLevel.parse(max_risk)
+        child = ToolRegistry(self.gate, max_risk=ceiling)
+        for tool in self._tools.values():
+            if tool.risk <= ceiling:
+                child._tools[tool.name] = tool
+        return child
 
     def specs(self) -> list[ToolSpec]:
         """Tool descriptions in the provider-neutral format."""
@@ -345,21 +392,28 @@ def _now() -> str:
 
 
 class EventLogger:
-    """Append-only JSONL event log."""
+    """Append-only JSONL event log.
 
-    def __init__(self, path: str | None) -> None:
+    ``defaults`` are merged into every event (for example
+    ``{"command": "next", "model": "deepseek-flash"}``), which is what the
+    offline cost aggregator reads.  Explicit event fields win over defaults.
+    """
+
+    def __init__(self, path: str | None, defaults: Mapping[str, Any] | None = None) -> None:
         self.path = path
+        self.defaults = dict(defaults or {})
         if path:
             os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
 
     def log(self, event: str, step: int, session_id: str = "", **data: Any) -> dict[str, Any]:
         """Write one structured event and return it."""
-        entry: dict[str, Any] = {
+        entry: dict[str, Any] = dict(redact_secrets(self.defaults))
+        entry.update({
             "ts": _now(),
             "session_id": session_id,
             "event": event,
             "step": step,
-        }
+        })
         # Credentials must never reach the JSONL log, even in a tool argument or
         # a model response that a poisoned document tricked the model into echoing.
         entry.update(redact_secrets(data))
@@ -417,7 +471,13 @@ def run_agent(
     def emit(event: str, **data: Any) -> None:
         events.append(logger.log(event, step, session_id=session_id, **data))
 
-    emit("session_start", task=task, tools=[s.name for s in tools.specs()])
+    emit(
+        "session_start",
+        task=task,
+        tools=[s.name for s in tools.specs()],
+        provider=getattr(provider, "name", ""),
+        max_risk=(tools.max_risk.label if tools.max_risk is not None else None),
+    )
 
     while True:
         if step >= limits.max_steps:
@@ -434,6 +494,10 @@ def run_agent(
                 outcome = context.compact()
                 if outcome is None:
                     break
+                # Compaction may call the provider itself.  Its tokens are real
+                # spend and count against the same hard budget as model turns;
+                # otherwise a sub-agent's "independent budget" is not a cap.
+                spent += max(0, int(outcome.prompt_tokens)) + max(0, int(outcome.completion_tokens))
                 emit(
                     "compaction",
                     removed_messages=outcome.removed_messages,
@@ -442,10 +506,20 @@ def run_agent(
                     system_trimmed=outcome.system_trimmed,
                     material_trimmed=outcome.material_trimmed,
                     truncated_messages=outcome.truncated_messages,
+                    usage={"prompt_tokens": outcome.prompt_tokens,
+                           "completion_tokens": outcome.completion_tokens},
+                    spent_tokens=spent,
                 )
+                if spent >= limits.max_total_tokens:
+                    break
                 if not context.should_compact():
                     break
             messages = context.build_messages()
+            if spent >= limits.max_total_tokens:
+                stopped = "token_budget"
+                emit("budget_exhausted", gate="max_total_tokens",
+                     max_total_tokens=limits.max_total_tokens, spent_tokens=spent)
+                break
 
         step += 1
         try:
@@ -472,6 +546,7 @@ def run_agent(
             tool_calls=[_call_payload(c) for c in response.tool_calls],
             usage={"prompt_tokens": usage.prompt_tokens, "completion_tokens": usage.completion_tokens},
             spent_tokens=spent,
+            model=getattr(provider, "name", "") or "unknown",
         )
 
         if response.tool_calls:
@@ -517,8 +592,10 @@ def run_agent(
         events=events,
         stopped=stopped,
         usage=Usage(
-            prompt_tokens=sum(int(e.get("usage", {}).get("prompt_tokens", 0)) for e in events if e["event"] == "model_response"),
-            completion_tokens=sum(int(e.get("usage", {}).get("completion_tokens", 0)) for e in events if e["event"] == "model_response"),
+            prompt_tokens=sum(int(e.get("usage", {}).get("prompt_tokens", 0))
+                              for e in events if e["event"] in _USAGE_EVENTS),
+            completion_tokens=sum(int(e.get("usage", {}).get("completion_tokens", 0))
+                                  for e in events if e["event"] in _USAGE_EVENTS),
         ),
         error=error,
     )

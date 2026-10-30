@@ -150,6 +150,50 @@ def test_full_session(course: Path) -> None:
     assert fresh["learner"]["kps"] == {} and fresh["reviews"]["cards"] == {}
 
 
+def test_cli_commands_are_audited_with_cli_tool_names(course: Path) -> None:
+    """I2: the CLI names its calls just like HTTP/MCP do."""
+    run_cli("setup", str(course), "--days", "5")
+    run_cli("answer", "q006", "right")
+    from examprep_agent.security import audit_path, read_jsonl
+
+    decisions = [event for event in read_jsonl(audit_path(str(course / "exam-cram")))
+                 if event.get("event") == "permission_decision"]
+    by_tool = {event.get("tool"): event for event in decisions}
+    assert by_tool["cli.setup"]["decision"] == "allow"
+    assert by_tool["cli.answer"]["decision"] == "allow"
+    assert by_tool["cli.answer"]["access"] == "write"
+
+
+def test_setup_persists_mode_reason_like_p1(course: Path) -> None:
+    """S5: ``study_state.json`` keeps the P1 ``mode_reason`` field."""
+    run_cli("setup", str(course), "--days", "5")
+    state = read_state(course)
+    assert state["mode_reason"] == "距考试 5 天 < 21，突击模式"
+    run_cli("plan", "--days", "30")
+    assert read_state(course)["mode_reason"] == "距考试 30 天 ≥ 21，长期模式"
+
+
+def test_quiz_rejects_a_negative_count_instead_of_slicing(course: Path) -> None:
+    run_cli("setup", str(course), "--days", "5")
+    rc, out, err = run_cli("quiz", "-n", "-1")
+    assert rc == 2
+    assert not out.strip()  # no "all but the last question" surprise
+
+
+def test_permissions_revoke_without_a_target_has_no_dangling_colon(course: Path) -> None:
+    run_cli("setup", str(course), "--days", "5")
+    rc, out, _ = run_cli("permissions", "revoke")
+    assert rc == 2
+    assert out.strip() == "找不到该授权"
+
+
+def test_next_keeps_the_blank_line_before_examples(course: Path) -> None:
+    run_cli("setup", str(course), "--days", "5")
+    rc, out, _ = run_cli("next", "--no-explain")
+    assert rc == 0
+    assert "\n\n--- 本章相关题目 (2) ---" in out
+
+
 def test_no_workspace_is_a_clear_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EXAMPREP_WORKSPACE", str(tmp_path / "nowhere"))
     monkeypatch.setattr(cli, "POINTER", str(tmp_path / "home" / "last_workspace"))
@@ -200,7 +244,9 @@ def test_next_without_a_provider_says_it_falls_back(course: Path) -> None:
     run_cli("setup", str(course), "--days", "5")
     rc, out, _ = run_cli("next")
     assert "回退为上面的材料切片" in out
-    assert not (course / "exam-cram" / "logs").exists()
+    # P2's parallel ingestion writes progress events under logs/, but an
+    # offline ``next`` must not create an agent run log.
+    assert not list((course / "exam-cram" / "logs").glob("agent-*.jsonl"))
 
 
 def test_plan_date_reselects_and_persists_the_mode(course: Path) -> None:
