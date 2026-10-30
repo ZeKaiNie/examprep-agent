@@ -17,7 +17,7 @@ repeated evidence converges toward 1 or 0.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Mapping
 
 _EPS = 1e-4
 
@@ -62,20 +62,37 @@ class KnowledgeState:
         )
 
 
+class KnowledgeStates(dict):
+    """Per-KP states that materialise the BKT prior on first direct access.
+
+    ``mastery()`` deliberately reads with ``.get`` and does *not* materialise,
+    so a brand-new course still serialises ``kps == {}`` (setup --fresh keeps
+    its empty-learner semantics).  Mutating code that needs a concrete state
+    can index ``states[kp]`` and get one at ``p_init``.
+    """
+
+    def __init__(self, default: float = 0.3,
+                 initial: Mapping[str, KnowledgeState] | None = None) -> None:
+        super().__init__(initial or {})
+        self.default = float(default)
+
+    def __missing__(self, key: str) -> KnowledgeState:
+        state = KnowledgeState(p_known=self.default)
+        self[key] = state
+        return state
+
+
 class BKTModel:
     """A tiny BKT model holding one :class:`KnowledgeState` per knowledge point."""
 
-    def __init__(self, params: BKTParams | None = None, states: dict[str, KnowledgeState] | None = None) -> None:
+    def __init__(self, params: BKTParams | None = None,
+                 states: Mapping[str, KnowledgeState] | None = None) -> None:
         self.params = params or BKTParams()
-        self.states: dict[str, KnowledgeState] = dict(states or {})
+        self.states: KnowledgeStates = KnowledgeStates(self.params.p_init, states)
 
     def get(self, kp: str) -> KnowledgeState:
         """Return (creating if needed) the state for a knowledge point."""
-        state = self.states.get(kp)
-        if state is None:
-            state = KnowledgeState(p_known=self.params.p_init)
-            self.states[kp] = state
-        return state
+        return self.states[kp]
 
     def mastery(self, kp: str) -> float:
         """Current p(known) for a knowledge point (prior when unseen)."""

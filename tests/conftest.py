@@ -15,6 +15,8 @@ _ENV_KEYS = (
     "EXAMPREP_BASE_URL",
     "EXAMPREP_WORKSPACE",
     "EXAMPREP_OFFLINE",
+    "EXAMPREP_CONFIG_DIR",
+    "XDG_CONFIG_HOME",
     "DEEPSEEK_API_KEY",
     "OPENAI_API_KEY",
     "EXAM_CRAM_WORKSPACE",
@@ -22,11 +24,16 @@ _ENV_KEYS = (
 
 
 @pytest.fixture(autouse=True)
-def offline_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Guarantee every test is offline: no API key, no ambient workspace."""
+def offline_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Guarantee every test is offline and uses a throwaway config directory.
+
+    Grants now live outside the workspace (user config dir); tests must never
+    read or write the real ``~/.config/examprep``.
+    """
     for key in _ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("EXAMPREP_OFFLINE", "1")
+    monkeypatch.setenv("EXAMPREP_CONFIG_DIR", str(tmp_path / "config"))
 
 
 @pytest.fixture

@@ -68,13 +68,10 @@ def build_chunks(chapters: Iterable[Chapter]) -> list[dict[str, Any]]:
 
 def save_index(ws: str, chunks: Sequence[dict[str, Any]]) -> None:
     """Atomically write the chunk list to `<workspace>/index.json`."""
-    path = os.path.join(ws, INDEX_FILE)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump({"version": 5, "chunks": list(chunks)}, fh, ensure_ascii=False)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, path)
+    from ..security.atomicio import atomic_write_json
+
+    atomic_write_json(os.path.join(ws, INDEX_FILE),
+                      {"version": 5, "chunks": list(chunks)})
 
 
 def load_index(ws: str) -> list[dict[str, Any]]:

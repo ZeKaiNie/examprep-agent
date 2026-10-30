@@ -53,6 +53,7 @@ class Card:
     lapses: int = 0
     last_review: str | None = None
     state: str = "new"              # new | review | relearning
+    kp: str | None = None           # knowledge point this card belongs to
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize for study_state.json."""
@@ -65,6 +66,7 @@ class Card:
             "lapses": self.lapses,
             "last_review": self.last_review,
             "state": self.state,
+            "kp": self.kp,
         }
 
     @classmethod
@@ -79,6 +81,7 @@ class Card:
             lapses=int(d.get("lapses", 0)),
             last_review=d.get("last_review"),
             state=str(d.get("state", "new")),
+            kp=d.get("kp"),
         )
 
 
@@ -203,6 +206,7 @@ class FSRS:
             lapses=lapses,
             last_review=today.isoformat(),
             state=state,
+            kp=card.kp,
         )
         return ReviewOutcome(card=updated, interval_days=interval, retrievability=retrievability)
 
@@ -227,10 +231,17 @@ class FSRSScheduler:
             self.cards[key] = card
         return card
 
-    def review(self, key: str, rating: int, today: date | None = None) -> ReviewOutcome:
-        """Review a card by key, creating it on first exposure."""
+    def review(self, key: str, rating: int, today: date | None = None, kp: str | None = None) -> ReviewOutcome:
+        """Review a card by key, creating it on first exposure.
+
+        ``kp`` tags the card with its knowledge point so the planner can map due
+        reviews back to the mastery graph even when the question bank is absent.
+        """
         today = today or date.today()
-        outcome = self.fsrs.review(self.get_or_create(key, today), rating, today)
+        card = self.get_or_create(key, today)
+        if kp is not None:
+            card.kp = kp
+        outcome = self.fsrs.review(card, rating, today)
         self.cards[key] = outcome.card
         return outcome
 
@@ -239,6 +250,32 @@ class FSRSScheduler:
         today = today or date.today()
         items = [c for c in self.cards.values() if c.due <= today.isoformat()]
         return sorted(items, key=lambda c: (c.due, c.key))
+
+    def due_count(self, today: date | None = None) -> int:
+        """Number of cards due on/before ``today``."""
+        return len(self.due(today))
+
+    def retrievability(self, card: Card, today: date | None = None) -> float:
+        """Predicted recall probability for one card right now (0 for unseen)."""
+        if not card.reps or not card.last_review:
+            return 0.0
+        today = today or date.today()
+        try:
+            elapsed = max(0.0, float((today - date.fromisoformat(card.last_review)).days))
+        except ValueError:
+            return 0.0
+        return self.fsrs.retrievability(elapsed, card.stability)
+
+    def predicted_retention(self, today: date | None = None) -> float | None:
+        """Mean predicted recall over reviewed cards (None when there are none)."""
+        values = [
+            self.retrievability(card, today)
+            for card in self.cards.values()
+            if card.reps and card.last_review
+        ]
+        if not values:
+            return None
+        return sum(values) / len(values)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the scheduler state, including the FSRS weights in use."""

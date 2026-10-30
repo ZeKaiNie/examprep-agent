@@ -11,14 +11,21 @@ import json
 import os
 from typing import Any
 
+from ..security.atomicio import atomic_write_text, snapshot_candidates
+from ..security.audit import redact_text
+
 STATE_FILE = "study_state.json"
 PROGRESS_FILE = "progress.md"
 NOTEBOOK_FILE = "notebook.md"
 
 
 def now() -> str:
-    """Current local time in the workspace's human-readable format."""
-    return _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    """Current local time in the workspace's human-readable format.
+
+    Milliseconds keep two answers in the same minute distinguishable, which the
+    memory import deduplication relies on.
+    """
+    return _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
 def exam_date_in(days: int | None, today: _dt.date | None = None) -> str | None:
@@ -69,6 +76,10 @@ def new_state(
         "history": [],   # {"qid","result","ts","chapter"}
         "mistakes": [],  # {"qid","chapter","note","status": open|fixed,"count"}
         "notes": [],     # {"chapter","type": summary|confusion|note,"text","ts"}
+        # P1 learner-model fields (safe defaults for older workspaces):
+        "graph_edits": {"add": [], "remove": []},
+        "daily": {},
+        "security_scan": {"scanned": False, "findings": []},
     }
 
 
@@ -78,12 +89,30 @@ def path(ws: str) -> str:
 
 
 def load(ws: str) -> dict[str, Any] | None:
-    """Load a workspace state, migrating the pre-5.3 `exam_days` field when present."""
+    """Load a workspace state, migrating older fields and recovering snapshots.
+
+    A truncated/corrupt state file is not fatal: the newest atomic snapshot is
+    tried before raising, so an interrupted write cannot destroy a course.
+    """
     p = path(ws)
     if not os.path.exists(p):
         return None
-    with open(p, encoding="utf-8") as fh:
-        state = json.load(fh)
+    try:
+        with open(p, encoding="utf-8") as fh:
+            state = json.load(fh)
+    except (ValueError, TypeError):
+        state = None
+        for snapshot in snapshot_candidates(p, os.path.join(ws, ".snapshots")):
+            try:
+                with open(snapshot, encoding="utf-8") as fh:
+                    state = json.load(fh)
+                break
+            except (ValueError, TypeError, OSError):
+                continue
+        if state is None:
+            raise
+    if not isinstance(state, dict):
+        raise ValueError("study_state.json is not an object")
     if "exam_days" in state:  # before 5.3 the count was stored and never went down
         days = state.pop("exam_days")
         if days is not None and not state.get("exam_date"):
@@ -94,29 +123,29 @@ def load(ws: str) -> dict[str, Any] | None:
             state["exam_date"] = exam_date_in(days, start)
     state.setdefault("exam_date", None)
     state.setdefault("profile", "standard")
+    state.setdefault("graph_edits", {"add": [], "remove": []})
+    state.setdefault("daily", {})
+    state.setdefault("security_scan", {"scanned": False, "findings": []})
     return state
 
 
-def _atomic_write(p: str, text: str) -> None:
-    """Write text through a temporary file, fsync, then ``os.replace``.
+def _atomic_write(p: str, text: str, snapshot_root: str | None = None) -> None:
+    """Atomic write with unique temp names and a pre-write snapshot.
 
-    This is atomic w.r.t. crashes and readers, but the fixed ``.tmp`` name means
-    concurrent writers to one workspace are not coordinated (P1: locking).
+    The unique temp file (``mkstemp`` in the destination directory) means two
+    processes writing the same workspace no longer collide on a fixed ``.tmp``
+    name; ``os.replace`` keeps readers on a complete document.
     """
-    tmp = p + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        fh.write(text)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, p)
+    atomic_write_text(p, text, snapshot_root=snapshot_root)
 
 
 def save(ws: str, state: dict[str, Any]) -> None:
     """Persist state plus the human-readable progress.md and notebook.md views."""
     state["updated"] = now()
-    _atomic_write(path(ws), json.dumps(state, ensure_ascii=False, indent=1))
-    _atomic_write(os.path.join(ws, PROGRESS_FILE), render_progress(state))
-    _atomic_write(os.path.join(ws, NOTEBOOK_FILE), render_notebook(state))
+    snapshot_root = os.path.join(ws, ".snapshots")
+    _atomic_write(path(ws), json.dumps(state, ensure_ascii=False, indent=1), snapshot_root)
+    _atomic_write(os.path.join(ws, PROGRESS_FILE), render_progress(state), snapshot_root)
+    _atomic_write(os.path.join(ws, NOTEBOOK_FILE), render_notebook(state), snapshot_root)
 
 
 def chapter(state: dict[str, Any], n: int | None = None) -> dict[str, Any] | None:
@@ -141,6 +170,7 @@ def record_result(
     note: str = "",
 ) -> None:
     """Append a history entry and open/close the matching mistake."""
+    note = redact_text(str(note or ""))
     state["history"].append({"qid": qid, "result": result, "ts": now(), "chapter": chapter_n})
     existing = next((m for m in state["mistakes"] if m["qid"] == qid), None)
     if result in ("wrong", "skip"):

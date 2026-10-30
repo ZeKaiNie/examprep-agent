@@ -13,6 +13,7 @@ import pytest
 from examprep_agent import cli
 from examprep_agent.core.loop import ToolRegistry, run_agent
 from examprep_agent.core.provider import FakeProvider
+from examprep_agent.security.risk import RiskLevel
 
 
 @pytest.fixture
@@ -132,7 +133,8 @@ def test_search_tool_observation_stays_fenced_and_flagged(injection_course: Path
     assert hit["flagged_lines"]
 
     tools = ToolRegistry()
-    tools.register("search_materials", "Search", {"type": "object", "properties": {}}, handler)
+    tools.register("search_materials", "Search", {"type": "object", "properties": {}}, handler,
+                   risk=RiskLevel.L0)
     provider = FakeProvider([
         {"tool_calls": [{"name": "search_materials",
                          "arguments": {"query": "ignore previous instructions"}}]},

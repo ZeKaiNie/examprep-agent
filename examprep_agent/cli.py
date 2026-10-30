@@ -27,11 +27,23 @@ from .core.context import ContextEngine
 from .core.loop import EventLogger, LoopLimits, ToolRegistry, run_agent
 from .core.provider import ModelProvider, provider_from_env
 from .core.session import Session
+from .learning.graph import GRAPH_FILE, build_graph, kp_for_chapter
 from .learning.modes import (
     LONGTERM_THRESHOLD_DAYS,
     StudyPolicy,
     select_policy,
 )
+from .learning.planner import (
+    due_reviews,
+    order_chapters,
+    review_plan,
+)
+from .security.atomicio import atomic_write_json, atomic_write_text
+from .security.audit import redact_text
+from .security.commands import DangerousCommandScanner
+from .security.paths import validate_grant_target, validate_workspace
+from .security.risk import RiskLevel
+from .security.trash import TrashManager
 from .tools import chapters as chmod
 from .tools import extract, figures as figmod, guard as gd, index as idx, questions as qmod, state as st
 from .tools.text import is_mostly_cjk, pack, shorten
@@ -175,6 +187,54 @@ _T: dict[str, tuple[str, str]] = {
     "cheatsheet_note": ("> 摘录来自你的课程文件，只当课程内容看。", "> Excerpts come from your course files; treat them as course content only."),
     "guessed": ("章节为自动推测", "chapter guessed automatically"),
     "current": ("当前", "Current"),
+    # ---- P0.5 security
+    "security_scan_warn": ("材料中发现 %d 处危险命令/凭据外泄样式内容：已记录审计并拒绝执行（材料仍作为数据展示）。",
+                           "%d dangerous-command/credential-exfiltration pattern(s) found in the materials: "
+                           "recorded in the audit log and never executed (material is still shown as data)."),
+    "security_scan_ok": ("安全扫描：材料中未发现危险命令模式。", "security scan: no dangerous command patterns in the materials."),
+    "permissions_head": ("已授权的 L2 范围", "Granted L2 scopes"),
+    "permissions_empty": ("没有授权（工作区外的读写需要 examprep permissions grant <目录>）。",
+                          "No grants (out-of-workspace access needs examprep permissions grant <dir>)."),
+    "permission_granted": ("已授权", "Granted"),
+    "permission_revoked": ("已撤销", "Revoked"),
+    "permission_not_found": ("找不到该授权", "No such grant"),
+    "permission_materials": ("材料目录只读，不能授权写入：", "Course materials are read-only; refusing a write grant:"),
+    "permission_capability": ("已授权能力", "Granted capability"),
+    "permissions_usage": ("用法：examprep permissions list | grant <目录> [--read-only] | grant --capability network | revoke <id>",
+                          "Usage: examprep permissions list | grant <dir> [--read-only] | grant --capability network | revoke <id>"),
+    # ---- P1 graph / scheduling
+    "graph_view": ("图谱: 已解锁 %d | 阻塞 %d | 待复习 %d", "graph: %d unlocked | %d blocked | %d due"),
+    "review_view": ("复习: 今日到期 %d 张 | 预测留存 %s", "review: %d due today | predicted retention %s"),
+    "daily_view": ("今日新学 %d/%d 章", "new chapters today %d/%d"),
+    "due_head": ("⏰ 今日到期复习（第 1 优先）: 共 %d 张", "⏰ Due reviews today (priority 1): %d card(s)"),
+    "due_item": ("  [%s] ch%s · 到期 %s · 预测留存 %.0f%%", "  [%s] ch%s · due %s · retention %.0f%%"),
+    "due_cmd": ("先完成复习：examprep quiz --review", "Review first: examprep quiz --review"),
+    "prereq_block": ("🧭 先修阻塞：ch%d《%s》需要先掌握 ch%d《%s》（掌握度 %.0f%% < 阈值 %.0f%%）。",
+                     "🧭 Prerequisite blocked: ch%d %s needs ch%d %s first (mastery %.0f%% < threshold %.0f%%)."),
+    "prereq_cmd": ("先补前置：examprep goto %d", "Learn the prerequisite first: examprep goto %d"),
+    "daily_limit": ("🧭 今日新学已达上限（%d/%d 章），先复习到期卡片或错题。",
+                    "🧭 Daily new-chapter limit reached (%d/%d); review due cards or mistakes first."),
+    "daily_cmd": ("继续复习：examprep quiz --review", "Continue reviewing: examprep quiz --review"),
+    "goto_blocked": ("⚠️ 先修未掌握：ch%d《%s》需要先掌握 ch%d《%s》（掌握度 %.0f%% < 阈值 %.0f%%）。未切换；先运行 examprep goto %d，或加 --force 强制跳过。",
+                     "⚠️ Unmet prerequisite: ch%d %s needs ch%d %s first (mastery %.0f%% < threshold %.0f%%). "
+                     "Not switched; run examprep goto %d first, or pass --force to skip it."),
+    "goto_forced": ("ℹ️ 已按 --force 强制跳过先修 ch%d（掌握度 %.0f%% < 阈值 %.0f%%）。",
+                    "ℹ️ Switched with --force; prerequisite ch%d skipped (mastery %.0f%% < threshold %.0f%%)."),
+    "quiz_review_head": ("=== 到期复习: %s ===", "=== Due review: %s ==="),
+    "quiz_review_none": ("今天没有到期的复习卡片。", "No due review cards today."),
+    "plan_due": ("🔁 今日到期复习（第一优先）: 共 %d 张，先复习 [%s] ch%s（到期 %s）",
+                 "🔁 Due reviews today (priority 1): %d card(s), start with [%s] ch%s (due %s)"),
+    "plan_today_review": ("复习 %d 张到期卡片（优先）", "%d due review(s) first"),
+    "graph_head": ("知识图谱: %d 个知识点, %d 条先修边", "Knowledge graph: %d KPs, %d prerequisite edges"),
+    "graph_node": ("  %s %s | 掌握 %.0f%% | %s", "  %s %s | mastery %.0f%% | %s"),
+    "graph_edge": ("    ← %s（%s）", "    ← %s (%s)"),
+    "graph_unlocked": ("已解锁", "unlocked"),
+    "graph_blocked": ("阻塞", "blocked"),
+    "graph_edit_ok": ("已更新先修边", "Prerequisite edge updated"),
+    "graph_edit_bad": ("先修边无效（节点不存在、重复或会形成环）", "Invalid prerequisite edge (unknown, duplicate or cyclic)"),
+    "graph_edit_hint": ("用法：--add-prereq 前置:目标（如 ch1:ch2）或 --remove-prereq 前置:目标",
+                        "Usage: --add-prereq PREREQ:TARGET (e.g. ch1:ch2) or --remove-prereq PREREQ:TARGET"),
+    "graph_missing": ("还没有知识图谱；先运行 setup。", "No knowledge graph yet; run setup first."),
 }
 
 
@@ -191,13 +251,8 @@ class W:
 
 # ------------------------------------------------------------------ helpers
 
-def _write_json(path: str, obj: Any) -> None:
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(obj, fh, ensure_ascii=False, indent=1)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, path)
+def _write_json(path: str, obj: Any, snapshot_root: str | None = None) -> None:
+    atomic_write_json(path, obj, snapshot_root=snapshot_root)
 
 
 def _read_json(path: str, default: Any = None) -> Any:
@@ -244,6 +299,11 @@ def _load_session(args: argparse.Namespace) -> Session | None:
     except FileNotFoundError:
         sys.stderr.write(_T["no_ws"][0] + "\n" + _T["no_ws"][1] + "\n")
         return None
+    except (ValueError, TypeError, OSError) as exc:
+        # Corrupt memory/graph layers must not surface as a traceback: report a
+        # readable error and let the user re-run setup/repair.
+        sys.stderr.write("workspace state is unreadable (%s): %s\n" % (ws, exc))
+        return None
 
 
 def _make_provider() -> ModelProvider | None:
@@ -270,12 +330,19 @@ def days_for_study(state: dict[str, Any]) -> int | None:
     return days - 1 if days >= 2 else 1
 
 
-def daily_groups(state: dict[str, Any]) -> list[list[dict[str, Any]]]:
-    """Split remaining chapters over remaining study days."""
+def daily_groups(state: dict[str, Any], order: Sequence[int] | None = None) -> list[list[dict[str, Any]]]:
+    """Split remaining chapters over remaining study days.
+
+    ``order`` (chapter numbers) lets the caller apply the mode's ranking — cram
+    urgency × past-exam frequency × unmastered, or graph topological order.
+    """
     todo = [c for c in state["chapters"] if c["status"] == "todo"]
     cur = st.chapter(state)
-    if cur and cur["status"] == "todo":
+    if order is None and cur and cur["status"] == "todo":
         todo = [cur] + [c for c in todo if c["n"] != cur["n"]]
+    elif order is not None:
+        rank = {n: index for index, n in enumerate(order)}
+        todo.sort(key=lambda c: (rank.get(c["n"], 10_000), c["n"]))
     days = days_for_study(state)
     if not todo or not days:
         return [todo] if todo else []
@@ -391,12 +458,15 @@ def footer(session: Session, w: W, next_cmd: str) -> str:
     return "📍 " + " · ".join(parts) + " → " + next_cmd
 
 
-def _advance_to_next_todo(state: dict[str, Any]) -> dict[str, Any] | None:
-    for c in state["chapters"]:
-        if c["status"] == "todo":
-            state["current"] = c["n"]
-            return c
-    return None
+def _advance_to_next_todo(state: dict[str, Any], order: Sequence[int] | None = None) -> dict[str, Any] | None:
+    todo = [c for c in state["chapters"] if c["status"] == "todo"]
+    if not todo:
+        return None
+    if order:
+        rank = {n: index for index, n in enumerate(order)}
+        todo.sort(key=lambda c: (rank.get(c["n"], 10_000), c["n"]))
+    state["current"] = todo[0]["n"]
+    return todo[0]
 
 
 def _print_figs(ws: str, label: str, paths: Sequence[str] | None) -> None:
@@ -568,6 +638,11 @@ def cmd_setup(args: argparse.Namespace) -> int:
         sys.stderr.write("materials folder not found: %s\n" % materials)
         return 2
     ws = os.path.abspath(args.workspace or os.path.join(materials, "exam-cram"))
+    try:
+        validate_workspace(ws, materials)
+    except ValueError as exc:
+        sys.stderr.write("unsafe workspace: %s\n" % exc)
+        return 2
     os.makedirs(os.path.join(ws, "chapters"), exist_ok=True)
 
     # The workspace may live inside the materials folder (documented --workspace
@@ -603,10 +678,51 @@ def cmd_setup(args: argparse.Namespace) -> int:
     fig_records += attach_question_figures(materials, ws, bank, pdf_infos, sources)
     chunks = idx.build_chunks(chapters)
 
-    # readable chapter files (short names keep deep paths usable)
+    if args.fresh:
+        # --fresh discards the learner model: move the old memory/graph/checkpoint
+        # to the trash (never a hard delete) instead of leaving stale history.
+        trash = TrashManager(ws, materials)
+        for name in ("memory", GRAPH_FILE, "session.json"):
+            old = os.path.join(ws, name)
+            if os.path.exists(old):
+                try:
+                    trash.delete(old, reason="setup --fresh")
+                except (OSError, ValueError):
+                    pass
+
+    # Deterministic safety scan of course text and the imported question bank.
+    # Material is still data (fenced on display); findings are recorded, and any
+    # future exec-type tool is hard-blocked by the permission gate.
+    scanner = DangerousCommandScanner()
+    findings = []
+    for src in sources:
+        if src.error or not src.text:
+            continue
+        findings.extend(scanner.scan(src.text, source=src.rel))
+    if bank:
+        findings.extend(scanner.scan(json.dumps(bank, ensure_ascii=False), source="quiz_bank.json"))
+    security_scan = {
+        "scanned": True,
+        "count": len(findings),
+        "findings": [finding.to_dict() for finding in findings],
+    }
+
+    # Knowledge graph: chapter sequence + backward material references, then the
+    # user's stored revisions (state["graph_edits"]).
+    graph = build_graph(chapters)
+    if keep_old:
+        graph.apply_edits(prev.get("graph_edits"))
+    graph.save(os.path.join(ws, GRAPH_FILE))
+
+    # readable chapter files (short names keep deep paths usable). Regeneration
+    # moves stale files to .trash instead of deleting them.
+    trash = TrashManager(ws, materials)
     for old in os.listdir(os.path.join(ws, "chapters")):
         if old.startswith("ch") and old.endswith(".md"):
-            os.remove(os.path.join(ws, "chapters", old))
+            try:
+                trash.delete(os.path.join(ws, "chapters", old), reason="setup regeneration")
+            except (OSError, ValueError):
+                continue
     for ch in chapters:
         safe = re.sub(r"[^\w\-]+", "_", ch.title)[:24].strip("_")
         body = "# %d. %s\n\n" % (ch.number, ch.title)
@@ -621,9 +737,10 @@ def cmd_setup(args: argparse.Namespace) -> int:
             except OSError:
                 continue
 
-    _write_json(os.path.join(ws, CHAPTERS_FILE), [c.to_dict() for c in chapters])
-    _write_json(os.path.join(ws, BANK_FILE), bank)
-    _write_json(os.path.join(ws, FIGURES_FILE), fig_records)
+    snapshot_root = os.path.join(ws, ".snapshots")
+    _write_json(os.path.join(ws, CHAPTERS_FILE), [c.to_dict() for c in chapters], snapshot_root)
+    _write_json(os.path.join(ws, BANK_FILE), bank, snapshot_root)
+    _write_json(os.path.join(ws, FIGURES_FILE), fig_records, snapshot_root)
     idx.save_index(ws, chunks)
 
     course = args.name or os.path.basename(materials.rstrip("\\/")) or "course"
@@ -650,10 +767,12 @@ def cmd_setup(args: argparse.Namespace) -> int:
         for key in ("learner", "reviews"):
             if key in prev:
                 state[key] = prev[key]
+        state["graph_edits"] = prev.get("graph_edits") or {"add": [], "remove": []}
         if exam_date is None:
             state["exam_date"] = prev.get("exam_date")
     if args.start:
         state["current"] = args.start
+    state["security_scan"] = security_scan
 
     days = st.days_left(state)
     policy = select_policy(days, args.mode)
@@ -661,13 +780,32 @@ def cmd_setup(args: argparse.Namespace) -> int:
     state["policy"] = policy.to_dict()
     state["mode_reason"] = _mode_reason(args.mode, days, policy, w)
     session = Session.create(ws, state, policy.name)
+    session.graph = graph
     if keep_old:  # keep the rolling context summary / counters / branch metadata too
         prev_checkpoint = Session._read_checkpoint(ws)
         session.context.summary = prev_checkpoint.context_summary
         session.counters.update(prev_checkpoint.counters)
         if prev_checkpoint.branch:
             session.branch = prev_checkpoint.branch
+    try:
+        session.memory.record_session_event(
+            "setup",
+            course=course,
+            chapters=len(chapters),
+            mode=policy.name,
+            security_findings=len(findings),
+        )
+    except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
+        session.log_memory_error("episodic", exc)
+    session.audit.log(
+        "material_scan",
+        materials=materials,
+        findings=len(findings),
+        by_kind={kind: sum(1 for item in findings if item.kind == kind)
+                 for kind in sorted({item.kind for item in findings})},
+    )
     session.save()
+    session.save_graph()
     remember_workspace(ws)
 
     kinds: dict[str, int] = {}
@@ -704,6 +842,8 @@ def cmd_setup(args: argparse.Namespace) -> int:
             pages = [str(p.number) for p in s.pages if gd.flagged_lines(p.text, limit=1)]
             if pages:
                 notes.append("%s %s" % (s.rel, w("injection_setup") % (", ".join(pages[:8]) + ("…" if len(pages) > 8 else ""))))
+    if findings:
+        notes.append(w("security_scan_warn") % len(findings))
     if notes:
         print(w("warnings") + ":")
         for note in notes:
@@ -760,6 +900,15 @@ def cmd_status(args: argparse.Namespace) -> int:
     om = st.open_mistakes(state)
     conf = [n for n in state["notes"] if n["type"] == "confusion"]
     print("%s: %d %s | %s: %d" % (w("mistakes"), len(om), w("open"), w("confusions"), len(conf)))
+    bank = _load_bank(session.workspace)
+    stats = session.graph_stats(bank)
+    due = session.due_reviews(bank)
+    retention = session.predicted_retention()
+    retention_text = "—" if retention is None else "%.0f%%" % (100.0 * retention)
+    print(w("graph_view") % (stats["unlocked"], stats["blocked"], stats["due"]))
+    print(w("review_view") % (len(due), retention_text))
+    counters = session.daily()
+    print(w("daily_view") % (len(counters["new_chapters"]), session.policy.daily_new_limit))
     groups = daily_groups(state)
     if groups and groups[0]:
         print("%s: %s  (examprep plan)" % (w("plan_today"), ", ".join("ch%d" % c["n"] for c in groups[0])))
@@ -775,9 +924,54 @@ def cmd_next(args: argparse.Namespace) -> int:
     state = session.state
     w = W(state["language"])
     ws = session.workspace
+    bank = _load_bank(ws)
+    rec = session.recommend(bank)
+
+    # 1) Due FSRS reviews outrank everything else.
+    if rec.kind == "due_review":
+        print(w("due_head") % len(rec.due))
+        for item in rec.due[:5]:
+            print(w("due_item") % (item.qid, item.chapter if item.chapter is not None else "?",
+                                   item.due, 100.0 * item.retrievability))
+        print(w("due_cmd"))
+        session.save()
+        print(footer(session, w, "examprep quiz --review"))
+        return 0
+
+    # 2) An unmet prerequisite must be filled before the target chapter.
+    if rec.kind == "prereq_blocked":
+        params = rec.params
+        print(w("prereq_block") % (
+            int(params.get("target", 0)), shorten(str(params.get("target_title", "")), 30),
+            int(rec.chapter or 0), shorten(str(params.get("prereq_title", "")), 30),
+            100.0 * float(params.get("mastery", 0.0)), 100.0 * float(params.get("threshold", 0.0)),
+        ))
+        print(w("prereq_cmd") % int(rec.chapter or 0))
+        session.save()
+        print(footer(session, w, "examprep goto %d" % int(rec.chapter or 0)))
+        return 0
+
+    # 3) Daily new-learning budget reached.
+    if rec.kind == "daily_limit":
+        params = rec.params
+        print(w("daily_limit") % (int(params.get("used", 0)), int(params.get("limit", 0))))
+        print(w("daily_cmd"))
+        session.save()
+        print(footer(session, w, "examprep quiz --review"))
+        return 0
+
+    if rec.kind == "all_done":
+        print(w("all_done"))
+        session.save()
+        print(footer(session, w, "examprep mistakes --answers"))
+        return 0
+
     cur = st.chapter(state)
     if cur is None or cur["status"] != "todo":
-        cur = _advance_to_next_todo(state)
+        target = st.chapter(state, rec.chapter) if rec.chapter is not None else _advance_to_next_todo(state)
+        if target is not None and target["status"] == "todo":
+            state["current"] = target["n"]
+            cur = target
     if cur is None:
         print(w("all_done"))
         session.save()
@@ -797,7 +991,8 @@ def cmd_next(args: argparse.Namespace) -> int:
         cur["part"] = max(0, cur["part"] - 1)
     k = cur["part"]
     head = ("第 %d 章：%s" if w.zh else "Chapter %d: %s") % (cur["n"], cur["title"])
-    bank = _load_bank(ws)
+    if rec.kind == "new":
+        session.mark_new_chapter(cur["n"])
     examples = PROFILES.get(state.get("profile") or "standard", PROFILES["standard"])["examples"]
     if not parts:
         print("=== %s ===" % head)
@@ -870,7 +1065,9 @@ def _search_handler(ws: str):
         for chunk, score in hits:
             text = chunk["text"][:800]
             results.append({
-                "file": chunk["file"],
+                # File names are external input too; keep them single-line and
+                # neutralised before they enter a tool observation.
+                "file": _safe_meta(chunk["file"]),
                 "page": chunk["page"],
                 "chapter": chunk["chapter"],
                 "score": round(score, 3),
@@ -895,7 +1092,7 @@ def _explain_slice(
         print(w("explain_fallback"))
         return
     ws = session.workspace
-    tools = ToolRegistry()
+    tools = ToolRegistry(session.gate)
     tools.register(
         "search_materials",
         "Search the course materials with BM25; returns file, page and a snippet.",
@@ -908,6 +1105,8 @@ def _explain_slice(
             "required": ["query"],
         },
         _search_handler(ws),
+        risk=RiskLevel.L0,
+        access="read",
     )
     context = ContextEngine(max_tokens=8000, provider=provider)
     context.set_system(TUTOR_SYSTEM)
@@ -930,6 +1129,11 @@ def _explain_slice(
         session_id="%s:ch%s:p%s" % (state_session_id(session), chapter["n"], chapter["part"]),
     )
     session.counters["explanations"] = int(session.counters.get("explanations", 0)) + 1
+    try:
+        session.memory.record_explanation(len(result.content), strategy="kernel_explanation")
+        session.memory.ingest_agent_logs(os.path.join(ws, "logs"))
+    except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
+        session.log_memory_error("episodic", exc)
     if result.stopped == "error" or not result.content.strip():
         print(w("explain_fallback"))
         return
@@ -966,25 +1170,36 @@ def cmd_ask(args: argparse.Namespace) -> int:
 
 
 def _pick_quiz(
+    session: Session,
     state: dict[str, Any],
     bank: list[dict[str, Any]],
     n: int,
     count: int,
     include_all: bool,
+    review_only: bool = False,
 ) -> list[dict[str, Any]]:
-    pool = [q for q in bank if include_all or q["chapter"] == n]
+    due_cards = {card.key: card for card in session.scheduler.due()}
+    if review_only:
+        pool = [q for q in bank if q["id"] in due_cards]
+    else:
+        chapter_pool = [q for q in bank if include_all or q["chapter"] == n]
+        due_pool = [q for q in bank if q["id"] in due_cards]
+        due_ids = {q["id"] for q in due_pool}
+        pool = due_pool + [q for q in chapter_pool if q["id"] not in due_ids]
     if not pool:
         return []
     asked = {h["qid"]: h["result"] for h in state["history"]}
     open_ids = {m["qid"] for m in st.open_mistakes(state)}
 
-    def rank(q: dict[str, Any]) -> tuple[int, int, str]:
+    def rank(q: dict[str, Any]) -> tuple[int, str, int, str]:
         exam_first = 0 if q["source"].get("kind") == "exam" else 1
+        if q["id"] in due_cards:
+            return (0, due_cards[q["id"]].due, exam_first, q["id"])
         if q["id"] in open_ids:
-            return (0, exam_first, q["id"])
+            return (1, "", exam_first, q["id"])
         if q["id"] not in asked:
-            return (1, exam_first, q["id"])
-        return (2, exam_first, q["id"])
+            return (2, "", exam_first, q["id"])
+        return (3, "", exam_first, q["id"])
 
     pool.sort(key=rank)
     return pool[:count]
@@ -1002,11 +1217,18 @@ def cmd_quiz(args: argparse.Namespace) -> int:
     # --profile keeps the skill's quiz size as a per-session ceiling; the mode
     # policy caps it (small=1 regardless of mode, large=5 in cram but 3 long-term).
     count = args.n or min(profile["quiz_n"], session.policy.quiz_intensity)
-    picked = _pick_quiz(state, _load_bank(ws), n, count, args.all)
-    print("=== %s: ch%s ===" % (w("quiz_head"), "*" if args.all else n))
+    bank = _load_bank(ws)
+    picked = _pick_quiz(session, state, bank, n, count, args.all, review_only=getattr(args, "review", False))
+    if getattr(args, "review", False):
+        print(w("quiz_review_head") % ("*" if not args.chapter else n))
+    else:
+        print("=== %s: ch%s ===" % (w("quiz_head"), "*" if args.all else n))
     if not picked:
-        print(w("no_quiz"))
-        print(w("no_examples"))
+        if getattr(args, "review", False):
+            print(w("quiz_review_none"))
+        else:
+            print(w("no_quiz"))
+            print(w("no_examples"))
         print(footer(session, w, "examprep next"))
         return 3
     for q in picked:
@@ -1139,7 +1361,10 @@ def cmd_note(args: argparse.Namespace) -> int:
     state = session.state
     w = W(state["language"])
     n = args.chapter or state["current"]
-    state["notes"].append({"chapter": n, "type": args.type, "text": args.text.strip(), "ts": st.now()})
+    state["notes"].append({
+        "chapter": n, "type": args.type,
+        "text": redact_text(args.text.strip()), "ts": st.now(),
+    })
     session.save()
     print("%s (ch%s, %s)" % (w("note_ok"), n, args.type))
     cur = st.chapter(state)
@@ -1162,7 +1387,8 @@ def cmd_mistakes(args: argparse.Namespace) -> int:
         return 0
     for m in om:
         q = _find_q(bank, m["qid"])
-        print("=== %s ×%d %s ===" % (m["qid"], m["count"], m.get("note", "")))
+        print("=== %s ×%d %s ===" % (
+            _safe_meta(m["qid"], 64), m["count"], _safe_meta(m.get("note", ""), 160)))
         if q:
             _print_question(q, w, session.workspace, with_answer=args.answers)
         print("")
@@ -1219,8 +1445,13 @@ def cmd_cheatsheet(args: argparse.Namespace) -> int:
                     out.append("  - " + m["note"])
             out.append("")
     dest = args.out or os.path.join(session.workspace, "cheatsheet.md")
-    with open(dest, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(out) + "\n")
+    # Direct host writes also pass the fence: materials are read-only and a
+    # path outside the workspace needs an explicit L2 grant.
+    decision = session.gate.check_path(dest, "write", tool="cheatsheet")
+    if not decision.allowed:
+        print("⚠️ %s" % decision.reason)
+        return 2
+    atomic_write_text(dest, "\n".join(out) + "\n", snapshot_root=os.path.join(session.workspace, ".snapshots"))
     print("%s: %s" % (w("cheatsheet_ok"), dest))
     print(footer(session, w, "examprep mistakes --answers"))
     return 0
@@ -1264,23 +1495,33 @@ def cmd_plan(args: argparse.Namespace) -> int:
         session.apply_policy(policy)
     total = len(state["chapters"])
     done = sum(1 for c in state["chapters"] if c["status"] in ("done", "verified"))
-    groups = daily_groups(state)
+    bank = _load_bank(session.workspace)
+    due = review_plan(session, bank)
+    todo = [c for c in state["chapters"] if c["status"] == "todo"]
+    ordered = order_chapters(session, todo, bank, st.days_left(state))
+    groups = daily_groups(state, [c["n"] for c in ordered]) if ordered else daily_groups(state)
+
+    if st.days_left(state) is not None:
+        print("%s: %s (%s) · %s %s · %d/%d %s" % (
+            w("plan_head"), days_text(state, w), state["exam_date"], w("mode"), state.get("mode", "longterm"),
+            done, total, ("章已完成" if w.zh else "chapters done")))
+    # The due review queue is the first plan item; the rest of the day follows.
+    if due:
+        first = due[0]
+        print(w("plan_due") % (len(due), first.qid,
+                              first.chapter if first.chapter is not None else "?", first.due))
     if not groups:
         print(w("plan_done"))
         session.save()
-        print(footer(session, w, "examprep mistakes --answers"))
+        print(footer(session, w, "examprep mistakes --answers" if not due else "examprep quiz --review"))
         return 0
     if st.days_left(state) is None:
         print(w("plan_no_days"))
         print("  " + ", ".join("ch%d %s" % (c["n"], shorten(c["title"], 30)) for c in groups[0]))
         session.save()
-        print(footer(session, w, "examprep next"))
+        print(footer(session, w, "examprep next" if not due else "examprep quiz --review"))
         return 0
-    bank = _load_bank(session.workspace)
     counts = question_counts(bank)
-    print("%s: %s (%s) · %s %s · %d/%d %s" % (
-        w("plan_head"), days_text(state, w), state["exam_date"], w("mode"), state.get("mode", "longterm"),
-        done, total, ("章已完成" if w.zh else "chapters done")))
     cur = st.chapter(state)
 
     def label(c: dict[str, Any]) -> str:
@@ -1295,7 +1536,9 @@ def cmd_plan(args: argparse.Namespace) -> int:
     focus = focus_chapters(state, bank, groups)
     if focus:
         print(w("plan_focus") % ", ".join("ch%d" % c["n"] for c in focus))
-    print("%s: %s" % (w("plan_today"), ", ".join("ch%d" % c["n"] for c in groups[0])))
+    today_items = [w("plan_today_review") % len(due)] if due else []
+    today_items += ["ch%d" % c["n"] for c in groups[0]]
+    print("%s: %s" % (w("plan_today"), ", ".join(today_items)))
     print(w("plan_loop"))
     session.save()
     print(footer(session, w, "examprep next"))
@@ -1312,6 +1555,18 @@ def cmd_goto(args: argparse.Namespace) -> int:
     if c is None:
         print(w("unknown_ch"))
         return 2
+    gaps = session.unmet_prerequisites(args.n)
+    if gaps and not getattr(args, "force", False):
+        # Prerequisite blocking is a state decision, not just a warning: do not
+        # move ``current`` (or start the chapter) until the gap is filled.
+        gap = gaps[0]
+        print(w("goto_blocked") % (
+            args.n, shorten(c["title"], 30), gap.chapter, shorten(gap.title, 30),
+            100.0 * gap.mastery, 100.0 * gap.threshold, gap.chapter,
+        ))
+        print(w("hint_next"))
+        print(footer(session, w, "examprep goto %d" % gap.chapter))
+        return 0
     state["current"] = args.n
     if c["status"] != "todo":
         c["status"] = "todo"
@@ -1319,7 +1574,146 @@ def cmd_goto(args: argparse.Namespace) -> int:
         c["part"] = 0
     session.save()
     print("%s %d: %s" % (w("goto_ok"), args.n, c["title"]))
+    if gaps:
+        gap = gaps[0]
+        print(w("goto_forced") % (
+            gap.chapter, 100.0 * gap.mastery, 100.0 * gap.threshold,
+        ))
     print(w("hint_next"))
+    print(footer(session, w, "examprep next"))
+    return 0
+
+
+def _parse_edge(text: str) -> tuple[str, str] | None:
+    """Parse ``PREREQ:TARGET`` (also accepts ``->`` / ``→``)."""
+    for separator in ("->", "→", ":"):
+        if separator in text:
+            left, _, right = text.partition(separator)
+            left, right = left.strip(), right.strip()
+            return (left, right) if left and right else None
+    return None
+
+
+def cmd_permissions(args: argparse.Namespace) -> int:
+    """List, grant or revoke persistent L2 authorizations."""
+    session = _load_session(args)
+    if session is None:
+        return 2
+    w = W(session.state["language"])
+    action = args.action
+    if action == "list":
+        grants = session.permissions.list()
+        print("%s:" % w("permissions_head"))
+        if not grants:
+            print("  " + w("permissions_empty"))
+        for grant in grants:
+            value = grant.value if grant.kind == "directory" else grant.value
+            print("  %s  %-10s %-8s %s  %s" % (
+                grant.id, grant.kind, ",".join(grant.access), value, grant.note))
+        return 0
+    if action == "grant":
+        if args.capability:
+            grant = session.gate.grant_capability(args.capability, note=args.note or "")
+            print("%s: %s %s" % (w("permission_capability"), grant.id, grant.value))
+            return 0
+        if not args.target:
+            print(w("permissions_usage"))
+            return 2
+        target = session.path_policy.resolve(args.target)
+        if session.path_policy.is_material(target):
+            print("%s %s" % (w("permission_materials"), target))
+            return 2
+        try:
+            # Disk roots, UNC roots, home and home ancestors are never a
+            # legitimate narrow grant.
+            validate_grant_target(target)
+        except ValueError as exc:
+            print("refusing grant: %s" % exc)
+            return 2
+        access = ("read",) if args.read_only else ("read", "write")
+        try:
+            grant = session.gate.grant_directory(target, access=access, note=args.note or "")
+        except ValueError as exc:
+            print("refusing grant: %s" % exc)
+            return 2
+        print("%s: %s %s (%s)" % (w("permission_granted"), grant.id, grant.value, ",".join(grant.access)))
+        return 0
+    if action == "revoke":
+        if not args.target:
+            print(w("permission_not_found"))
+            return 2
+        removed = session.gate.revoke(args.target)
+        print("%s: %s" % (w("permission_revoked") if removed else w("permission_not_found"), args.target))
+        return 0 if removed else 2
+    return 2
+
+
+def cmd_graph(args: argparse.Namespace) -> int:
+    """Show the knowledge graph and apply user prerequisite revisions."""
+    session = _load_session(args)
+    if session is None:
+        return 2
+    state = session.state
+    w = W(state["language"])
+    bank = _load_bank(session.workspace)
+    edits = state.setdefault("graph_edits", {"add": [], "remove": []})
+    edits.setdefault("add", [])
+    edits.setdefault("remove", [])
+
+    changed = False
+    for text in (args.add_prereq or []):
+        pair = _parse_edge(text)
+        if pair is None:
+            print(w("graph_edit_hint"))
+            return 2
+        prerequisite, target = pair
+        if not session.graph.add_edge(prerequisite, target, reason="user"):
+            print("%s: %s" % (w("graph_edit_bad"), text))
+            return 2
+        if [prerequisite, target] not in edits["add"]:
+            edits["add"].append([prerequisite, target])
+        edits["remove"] = [item for item in edits["remove"] if item != [prerequisite, target]]
+        print("%s: %s -> %s" % (w("graph_edit_ok"), prerequisite, target))
+        changed = True
+    for text in (args.remove_prereq or []):
+        pair = _parse_edge(text)
+        if pair is None:
+            print(w("graph_edit_hint"))
+            return 2
+        prerequisite, target = pair
+        if not session.graph.remove_edge(prerequisite, target):
+            print("%s: %s" % (w("graph_edit_bad"), text))
+            return 2
+        if [prerequisite, target] not in edits["remove"]:
+            edits["remove"].append([prerequisite, target])
+        edits["add"] = [item for item in edits["add"] if item != [prerequisite, target]]
+        print("%s: %s -> %s" % (w("graph_edit_ok"), prerequisite, target))
+        changed = True
+
+    if args.rebuild:
+        chapters = _load_chapters(session.workspace)
+        rebuilt = build_graph(chapters.values())
+        rebuilt.apply_edits(edits)
+        session.graph = rebuilt
+        changed = True
+
+    if changed:
+        session.save()
+        session.save_graph()
+
+    stats = session.graph_stats(bank)
+    print(w("graph_head") % (len(session.graph.nodes), len(session.graph.edges)))
+    threshold = float(session.policy.advance_mastery)
+    for kp in session.graph.topological_order():
+        node = session.graph.nodes[kp]
+        mastery = session.learner.mastery(kp)
+        unlocked = session.graph.is_unlocked(kp, session.learner.mastery, threshold)
+        status = w("graph_unlocked") if unlocked else w("graph_blocked")
+        print(w("graph_node") % (kp, shorten(node.title, 32), 100.0 * mastery, status))
+        for edge in session.graph.edges:
+            if edge.target == kp:
+                print(w("graph_edge") % (edge.prerequisite, edge.reason))
+    print(w("graph_view") % (stats["unlocked"], stats["blocked"], stats["due"]))
     print(footer(session, w, "examprep next"))
     return 0
 
@@ -1356,6 +1750,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             print("study: %s | language=%s | mode=%s | chapters=%d | exam_date=%s" % (
                 state.get("course"), state.get("language"), state.get("mode", "longterm"),
                 len(state.get("chapters", [])), state.get("exam_date")))
+            try:
+                session = Session.load(ws)
+                memory = session.memory.summary()
+                print("security: grants=%d | audit=%s" % (len(session.permissions.list()), session.audit.path))
+                print("memory: events=%d | answers=%d | strategies=%d | corrupt=%d" % (
+                    memory["episodic"]["events"], memory["semantic"]["answers"],
+                    len(memory["procedural"]["strategies"]), len(memory["corrupt_files"])))
+                print("graph: nodes=%d | edges=%d" % (len(session.graph.nodes), len(session.graph.edges)))
+            except (OSError, ValueError):
+                pass
     print("offline tests: python -m pytest -q")
     return 0
 
@@ -1407,11 +1811,12 @@ def build_parser() -> argparse.ArgumentParser:
     _add_workspace(s)
     s.set_defaults(fn=cmd_ask)
 
-    s = sub.add_parser("quiz", help="pick questions (open mistakes first, exam questions early)")
+    s = sub.add_parser("quiz", help="pick questions (due reviews first, open mistakes, exam questions)")
     s.add_argument("-n", type=int,
                    help="number of questions (default: min(profile quiz_n, mode quiz intensity))")
     s.add_argument("--chapter", type=int)
     s.add_argument("--all", action="store_true")
+    s.add_argument("--review", action="store_true", help="only quiz cards that are due today")
     _add_workspace(s)
     s.set_defaults(fn=cmd_quiz)
 
@@ -1464,11 +1869,30 @@ def build_parser() -> argparse.ArgumentParser:
     _add_workspace(s)
     s.set_defaults(fn=cmd_plan)
 
-    s = sub.add_parser("goto", help="switch to a chapter")
+    s = sub.add_parser("goto", help="switch to a chapter (warns about unmet prerequisites)")
     s.add_argument("n", type=int)
     s.add_argument("--restart", action="store_true")
+    s.add_argument("--force", action="store_true", help="suppress the prerequisite warning")
     _add_workspace(s)
     s.set_defaults(fn=cmd_goto)
+
+    s = sub.add_parser("permissions", help="list/grant/revoke L2 path and capability grants")
+    s.add_argument("action", choices=["list", "grant", "revoke"])
+    s.add_argument("target", nargs="?", help="directory to grant, grant id to revoke")
+    s.add_argument("--capability", help="grant a capability such as network instead of a directory")
+    s.add_argument("--read-only", action="store_true", help="grant read access only")
+    s.add_argument("--note", default="", help="free-form note stored with the grant")
+    _add_workspace(s)
+    s.set_defaults(fn=cmd_permissions)
+
+    s = sub.add_parser("graph", help="show the KP graph or revise prerequisite edges")
+    s.add_argument("--add-prereq", action="append", metavar="PREREQ:TARGET",
+                   help="add a prerequisite edge (e.g. ch1:ch2)")
+    s.add_argument("--remove-prereq", action="append", metavar="PREREQ:TARGET",
+                   help="remove a prerequisite edge")
+    s.add_argument("--rebuild", action="store_true", help="rebuild from chapters.json, keeping user edits")
+    _add_workspace(s)
+    s.set_defaults(fn=cmd_graph)
 
     s = sub.add_parser("doctor", help="environment check")
     _add_workspace(s)

@@ -1,30 +1,50 @@
 # -*- coding: utf-8 -*-
-"""Durable study session: study state + learner model + review cards + checkpoint.
+"""Durable study session: state + learner model + graph + memory + checkpoint.
 
 A :class:`Session` binds the deterministic ``tools.state`` study state to the
-learning layer (BKT mastery and FSRS cards) and persists both:
+learning layer (BKT mastery, FSRS cards, prerequisite graph), the three-layer
+long-term memory and the P0.5 security context:
 
 - ``study_state.json`` — progress, history, mistakes, notes, learner state and
-  review cards (via :mod:`examprep_agent.tools.state`, atomic writes);
+  review cards (atomic writes + pre-write snapshots);
 - ``session.json`` — kernel checkpoint: mode, rolling context summary, branch
-  metadata (reserved for conversation branching) and counters.
+  metadata and counters;
+- ``knowledge_graph.json`` — KP graph (nodes + prerequisite edges);
+- ``memory/`` — episodic JSONL, semantic profile, procedural preferences;
+- ``audit/audit-*.jsonl`` — security audit (read-only for tools); persistent
+  grants live outside the workspace in the user config directory.
 
-Both files are written through a temporary file, ``flush`` + ``os.fsync`` and
-``os.replace``, so a crash never leaves a half-written JSON document.  Concurrent
-writers to the same workspace are not coordinated (the fixed ``.tmp`` name is
-inherited from the original skill); that is a P1 concern.
+All writes are atomic and snapshotted; a corrupt checkpoint or memory layer
+degrades to an empty default instead of crashing the session.
 """
 from __future__ import annotations
 
 import json
 import os
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from typing import Any
+from datetime import date, datetime, timezone
+from typing import Any, Sequence
 
+from ..learning.graph import GRAPH_FILE, KnowledgeGraph, load_or_build
 from ..learning.learner import BKTModel
 from ..learning.modes import LongTermPolicy, StudyPolicy, policy_for_mode
+from ..learning.planner import (
+    DueReview,
+    PrereqGap,
+    Recommendation,
+    daily_counters,
+    due_kps,
+    due_reviews,
+    mark_new_chapter,
+    recommend,
+    unmet_prerequisites,
+)
 from ..learning.scheduler import FSRSScheduler
+from ..memory.store import LongTermMemory
+from ..security.atomicio import atomic_write_json, snapshot_candidates
+from ..security.audit import AuditLog
+from ..security.paths import PathPolicy
+from ..security.permissions import PermissionGate, PermissionStore, WriteThrottle
 from ..tools import state as st
 from .context import ContextEngine
 
@@ -36,14 +56,8 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def _atomic_write_json(path: str, payload: dict[str, Any]) -> None:
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, ensure_ascii=False, indent=1)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, path)
+def _atomic_write_json(path: str, payload: dict[str, Any], snapshot_root: str | None = None) -> None:
+    atomic_write_json(path, payload, snapshot_root=snapshot_root)
 
 
 @dataclass
@@ -91,8 +105,16 @@ class Session:
         except ValueError:
             self.policy = LongTermPolicy()
             self.mode = self.policy.name
-        self.learner = BKTModel.from_dict(state.get("learner"))
-        self.scheduler = FSRSScheduler.from_dict(state.get("reviews"))
+        try:
+            self.learner = BKTModel.from_dict(state.get("learner"))
+        except (ValueError, TypeError, AttributeError, KeyError):
+            # A hand-edited/corrupt learner block must not make the whole
+            # workspace unusable; the graph and history remain authoritative.
+            self.learner = BKTModel()
+        try:
+            self.scheduler = FSRSScheduler.from_dict(state.get("reviews"))
+        except (ValueError, TypeError, AttributeError, KeyError):
+            self.scheduler = FSRSScheduler()
         # The active mode owns the retention target: cram (0.8) must actually
         # change FSRS intervals rather than persisting a stale 0.9.
         self.scheduler.fsrs.desired_retention = float(self.policy.target_retention)
@@ -102,11 +124,44 @@ class Session:
         self.counters: dict[str, int] = {"answers": 0, "explanations": 0, "compactions": 0}
         self.counters.update(checkpoint.counters)
 
-    def apply_policy(self, policy: StudyPolicy) -> None:
-        """Switch modes and re-wire the policy's FSRS retention target."""
-        self.policy = policy
-        self.mode = policy.name
-        self.scheduler.fsrs.desired_retention = float(policy.target_retention)
+        # ---- P0.5 security context (paths, grants, audit, write throttle)
+        self.materials = state.get("materials")
+        self.path_policy = PathPolicy(self.workspace, self.materials)
+        self.audit = AuditLog(self.workspace)
+        self.permissions = PermissionStore(self.workspace)
+        self.throttle = WriteThrottle(self.workspace)
+        self.gate = PermissionGate(
+            self.workspace,
+            self.materials,
+            store=self.permissions,
+            audit=self.audit,
+            throttle=self.throttle,
+        )
+
+        # ---- P1 learner model: graph + long-term memory
+        try:
+            self.graph: KnowledgeGraph = load_or_build(self.workspace, state)
+        except (ValueError, TypeError, OSError):  # corrupt graph must not block study
+            from ..learning.graph import graph_from_state
+
+            try:
+                self.graph = graph_from_state(state)
+            except (ValueError, TypeError, AttributeError, KeyError):
+                self.graph = KnowledgeGraph()
+        self.memory = LongTermMemory(self.workspace)
+        try:
+            self.memory.sync_from_state(state)
+        except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
+            # Memory is a side record: a damaged layer degrades, it never breaks
+            # loading or the answer flow.
+            self.log_memory_error("sync", exc)
+
+    def log_memory_error(self, layer: str, exc: BaseException) -> None:
+        """Best-effort audit of a memory failure; never raises into the caller."""
+        try:
+            self.audit.log("memory_write_error", layer=layer, error=str(exc))
+        except OSError:
+            pass
 
     # ------------------------------------------------------------ lifecycle
     @classmethod
@@ -139,6 +194,12 @@ class Session:
             with open(path, encoding="utf-8") as fh:
                 return SessionCheckpoint.from_dict(json.load(fh))
         except (ValueError, TypeError, OSError):
+            for snapshot in snapshot_candidates(path, os.path.join(workspace, ".snapshots")):
+                try:
+                    with open(snapshot, encoding="utf-8") as fh:
+                        return SessionCheckpoint.from_dict(json.load(fh))
+                except (ValueError, TypeError, OSError):
+                    continue
             return SessionCheckpoint(workspace=os.path.abspath(workspace))
 
     def save(self) -> None:
@@ -160,8 +221,16 @@ class Session:
             counters=self.counters,
             updated=_iso_now(),
         )
-        _atomic_write_json(os.path.join(self.workspace, SESSION_FILE), cp.to_dict())
+        _atomic_write_json(
+            os.path.join(self.workspace, SESSION_FILE),
+            cp.to_dict(),
+            snapshot_root=os.path.join(self.workspace, ".snapshots"),
+        )
         return cp
+
+    def save_graph(self) -> None:
+        """Atomically persist ``knowledge_graph.json``."""
+        self.graph.save(os.path.join(self.workspace, GRAPH_FILE))
 
     # ------------------------------------------------------------ branching
     def new_branch(self, label: str, parent: str | None = None) -> dict[str, Any]:
@@ -178,7 +247,7 @@ class Session:
 
     # ------------------------------------------------------------ learning events
     def record_answer(self, qid: str, chapter_n: int, result: str, note: str = "") -> dict[str, Any]:
-        """Record a graded answer: study state + BKT + FSRS in one place.
+        """Record a graded answer: study state + BKT + FSRS + long-term memory.
 
         ``skip`` deliberately maps to FSRS Hard (rating 2): the card was reviewed
         but not recalled confidently, so it neither resets nor counts a lapse.
@@ -188,11 +257,30 @@ class Session:
         if result in ("right", "wrong"):
             self.learner.update(kp, result == "right")
         rating = {"right": 3, "wrong": 1, "skip": 2}[result]
-        outcome = self.scheduler.review(qid, rating)
+        outcome = self.scheduler.review(qid, rating, kp=kp)
         self.counters["answers"] = int(self.counters.get("answers", 0)) + 1
+        daily_counters(self.state)["answers"] += 1
+        mastery = self.learner.mastery(kp)
+        state_ts = ""
+        if self.state.get("history"):
+            state_ts = str(self.state["history"][-1].get("ts", ""))
+        try:
+            self.memory.record_answer(
+                qid=qid,
+                kp=kp,
+                result=result,
+                mastery=mastery,
+                chapter=chapter_n,
+                note=note,
+                ts=state_ts or None,
+            )
+        except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
+            # Memory must never break the study loop: a schema/IO failure is
+            # recorded and the answer itself is already persisted in state.
+            self.log_memory_error("long_term", exc)
         return {
             "kp": kp,
-            "mastery": self.learner.mastery(kp),
+            "mastery": mastery,
             "due": outcome.card.due,
             "interval_days": outcome.interval_days,
         }
@@ -201,6 +289,10 @@ class Session:
         """BKT mastery for a chapter-level knowledge point."""
         return self.learner.mastery("ch%d" % chapter_n)
 
+    def mastery_of(self, kp: str) -> float:
+        """BKT mastery for an arbitrary KP id (``chN`` today)."""
+        return self.learner.mastery(kp)
+
     def should_advance(self, chapter_n: int) -> bool:
         """Whether the active policy's mastery gate is satisfied for a chapter."""
         return self.policy.can_advance(self.mastery(chapter_n))
@@ -208,3 +300,55 @@ class Session:
     def set_context_summary(self, summary: str) -> None:
         """Replace the rolling context summary without rewriting study state."""
         self.context.summary = summary
+
+    def apply_policy(self, policy: StudyPolicy) -> None:
+        """Switch modes and re-wire the policy's FSRS retention target."""
+        self.policy = policy
+        self.mode = policy.name
+        self.state["mode"] = policy.name
+        self.scheduler.fsrs.desired_retention = float(policy.target_retention)
+        try:
+            self.memory.procedural.sync_preferences(self.state)
+        except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
+            self.log_memory_error("procedural", exc)
+
+    # ------------------------------------------------------------ planner views
+    def due_reviews(self, bank: Sequence[dict[str, Any]] | None = None,
+                    today: date | None = None) -> list[DueReview]:
+        """FSRS cards due today, enriched with question/KP metadata."""
+        return due_reviews(self, bank or [], today)
+
+    def due_kps(self, bank: Sequence[dict[str, Any]] | None = None,
+                today: date | None = None) -> set[str]:
+        """Knowledge points with at least one due card."""
+        return due_kps(self, bank or [], today)
+
+    def predicted_retention(self, today: date | None = None) -> float | None:
+        """Mean predicted recall across reviewed cards (None when none exist)."""
+        return self.scheduler.predicted_retention(today)
+
+    def graph_stats(self, bank: Sequence[dict[str, Any]] | None = None,
+                    today: date | None = None) -> dict[str, Any]:
+        """Unlocked/blocked/due counts for the status panel."""
+        return self.graph.statistics(
+            self.learner.mastery,
+            float(self.policy.advance_mastery),
+            self.due_kps(bank, today),
+        )
+
+    def unmet_prerequisites(self, chapter_n: int) -> list[PrereqGap]:
+        """Blocking prerequisite gaps for a chapter."""
+        return unmet_prerequisites(self, chapter_n)
+
+    def recommend(self, bank: Sequence[dict[str, Any]] | None = None,
+                  today: date | None = None) -> Recommendation:
+        """The planner's single next action."""
+        return recommend(self, bank or [], today)
+
+    def mark_new_chapter(self, chapter_n: int, today: date | None = None) -> bool:
+        """Count a new chapter against today's policy budget."""
+        return mark_new_chapter(self.state, chapter_n, today)
+
+    def daily(self, today: date | None = None) -> dict[str, Any]:
+        """Today's counters (new chapters, reviews, answers)."""
+        return daily_counters(self.state, today)

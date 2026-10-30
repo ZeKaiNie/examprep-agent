@@ -289,8 +289,14 @@ def extract_figures(
     """
     out_dir = os.path.join(ws, FIG_DIR)
     os.makedirs(out_dir, exist_ok=True)
+    # Regeneration must not hard-delete: old crops move to the workspace trash.
+    from ..security.trash import TrashManager
+    trash = TrashManager(ws, materials)
     for old in os.listdir(out_dir):
-        os.remove(os.path.join(out_dir, old))
+        try:
+            trash.delete(os.path.join(out_dir, old), reason="figure regeneration")
+        except (OSError, ValueError):
+            continue
     records: list[dict[str, Any]] = []
     scan_pages: dict[str, set[int]] = {}
     pdf_infos: dict[str, dict[int, PdfPageInfo]] = {}

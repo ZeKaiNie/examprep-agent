@@ -15,6 +15,7 @@ from examprep_agent.core.provider import (
     ToolCall,
     Usage,
 )
+from examprep_agent.security.risk import RiskLevel
 
 
 def make_tools() -> ToolRegistry:
@@ -24,8 +25,10 @@ def make_tools() -> ToolRegistry:
         "Echo text back",
         {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]},
         lambda text: {"echo": text},
+        risk=RiskLevel.L0,
     )
-    tools.register("noop", "Do nothing", {"type": "object", "properties": {}}, lambda: {"ok": True})
+    tools.register("noop", "Do nothing", {"type": "object", "properties": {}}, lambda: {"ok": True},
+                   risk=RiskLevel.L0)
     return tools
 
 
@@ -137,7 +140,8 @@ def test_an_over_budget_response_cannot_run_tools_with_side_effects() -> None:
     side_effects: list[str] = []
     tools = ToolRegistry()
     tools.register("write_file", "Pretend to write a file", {"type": "object", "properties": {}},
-                   lambda: side_effects.append("written") or {"ok": True})
+                   lambda: side_effects.append("written") or {"ok": True},
+                   risk=RiskLevel.L1, access="write")
     provider = FakeProvider([
         {"tool_calls": [{"name": "write_file", "arguments": {}}],
          "usage": {"prompt_tokens": 100, "completion_tokens": 100}},
@@ -159,7 +163,7 @@ def test_an_over_budget_response_cannot_run_tools_with_side_effects() -> None:
 def test_oversized_observation_is_valid_json_and_marked_truncated() -> None:
     tools = ToolRegistry()
     tools.register("big", "Return a large result", {"type": "object", "properties": {}},
-                   lambda: {"text": "x" * 5000})
+                   lambda: {"text": "x" * 5000}, risk=RiskLevel.L0)
     execution = tools.execute("big", {}, max_chars=200)
     assert execution.ok
     parsed = json.loads(execution.output)
@@ -209,7 +213,8 @@ def test_tool_argument_errors_are_captured() -> None:
 def test_registry_schema_and_decorator_form() -> None:
     tools = ToolRegistry()
 
-    @tools.register("add", "Add two ints", {"type": "object", "properties": {"a": {}, "b": {}}})
+    @tools.register("add", "Add two ints", {"type": "object", "properties": {"a": {}, "b": {}}},
+                    risk=RiskLevel.L0)
     def add(a: int, b: int) -> int:
         return a + b
 
@@ -226,11 +231,13 @@ def test_fake_provider_drives_an_explain_then_quiz_script() -> None:
         "search_materials", "Search course material",
         {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]},
         lambda query: [{"file": "ch1.md", "page": 1, "text": "A stack is LIFO."}],
+        risk=RiskLevel.L0,
     )
     tools.register(
         "make_quiz", "Create a quiz item from the material",
         {"type": "object", "properties": {"chapter": {"type": "integer"}}},
         lambda chapter: {"qid": "q1", "question": "What order does a stack use?", "answer": "LIFO"},
+        risk=RiskLevel.L0,
     )
     provider = FakeProvider([
         {"tool_calls": [{"id": "c1", "name": "search_materials", "arguments": {"query": "stack order"}}]},

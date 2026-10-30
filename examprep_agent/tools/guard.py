@@ -45,6 +45,13 @@ _EN = [
     r"\b(?:do\s+not|don't|never)\s+(?:reveal|disclose|mention)\s+(?:this|these|that|it)\b[^.\n]{0,20}\b(?:user|student)s?\b",
     r"\b(?:do\s+not|don't|never)\s+(?:tell|let|inform)\s+(?:the\s+)?(?:user|student)s?\s+(?:know|about\s+(?:this|these|that|it))\b",
     r"\b(?:send|upload|post|forward|exfiltrate|email)\b[^.\n]{0,40}\b(?:(?:the\s+)?(?:student|user)'?s?|their)\s+(?:notes?|files?|data|answers?|messages?|conversation|history|keys?|passwords?|work)\b[^.\n]{0,30}\bto\s+https?://",
+    # Credential exfiltration (P0.5 adversarial set: "induce key leak").
+    r"\b(?:api[_-]?key|secret|token|password|passwd|credentials?)\b[^.\n]{0,50}"
+    r"\b(?:send|upload|post|forward|email|leak|exfiltrate)\b[^.\n]{0,50}https?://",
+    r"\b(?:send|upload|post|forward|email|leak|exfiltrate)\b[^.\n]{0,50}"
+    r"\b(?:api[_-]?key|secret|token|password|passwd|credentials?)\b",
+    r"\b(?:print|show|reveal|output|repeat|cat|type)\b[^.\n]{0,30}"
+    r"\b(?:api[_-]?key|secret[_-]?key|access[_-]?token|password)\b",
     r"<\|im_start\|>\s*system",
 ]
 _ZH = [
@@ -61,6 +68,13 @@ _ZH = [
     r"不要(?:告诉|让|提醒)(?:学生|用户)(?:这|此|本|知道)",
     r"(?:学生|用户)的?[^。\n]{0,15}(?:发送|上传|转发)(?:到|给)\s*https?://",
     r"(?:发送|上传|转发)(?:学生|用户)的?[^。\n]{0,15}(?:到|给)\s*https?://",
+    # Credential exfiltration (P0.5 adversarial set: "induce key leak").
+    r"(?:密钥|令牌|口令|密码|凭证|api\s*key|access\s*token)[^。\n]{0,40}"
+    r"(?:发送|上传|转发|发给|泄露|告诉|提交)[^。\n]{0,40}https?://",
+    r"(?:发送|上传|转发|发给|泄露|提交)[^。\n]{0,40}"
+    r"(?:密钥|令牌|口令|密码|凭证|api\s*key|access\s*token)",
+    r"(?:输出|泄露|透露|显示|打印|复述)[^。\n]{0,30}"
+    r"(?:密钥|令牌|口令|密码|凭证|api\s*key)",
 ]
 _PATTERNS = [re.compile(p, re.I | re.M) for p in _EN + _ZH]
 _MARKER = re.compile(r"<\s*<\s*<\s*m\W{0,3}a\W{0,3}t\W{0,3}e\W{0,3}r\W{0,3}i\W{0,3}a\W{0,3}l"

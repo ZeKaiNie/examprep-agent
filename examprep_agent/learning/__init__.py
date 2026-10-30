@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Learning engine: dual-mode policies, BKT mastery and FSRS scheduling."""
+"""Learning engine: dual-mode policies, BKT, FSRS, knowledge graph and planner."""
 
+from .graph import (
+    GRAPH_FILE,
+    GraphEdge,
+    GraphNode,
+    KnowledgeGraph,
+    build_graph,
+    graph_from_state,
+    kp_for_chapter,
+    load_or_build,
+)
 from .learner import BKTModel, BKTParams, KnowledgeState
 from .modes import (
     LONGTERM_THRESHOLD_DAYS,
@@ -9,6 +19,23 @@ from .modes import (
     StudyPolicy,
     policy_for_mode,
     select_policy,
+)
+from .planner import (
+    DueReview,
+    PrereqGap,
+    Recommendation,
+    count_new_today,
+    cram_score,
+    daily_counters,
+    due_kps,
+    due_reviews,
+    mark_new_chapter,
+    mark_review,
+    order_chapters,
+    recommend,
+    review_plan,
+    target_chapter,
+    unmet_prerequisites,
 )
 from .scheduler import (
     DEFAULT_WEIGHTS,
@@ -26,15 +53,38 @@ __all__ = [
     "Card",
     "CramPolicy",
     "DEFAULT_WEIGHTS",
+    "DueReview",
     "FSRS",
     "FSRSScheduler",
+    "GRAPH_FILE",
+    "GraphEdge",
+    "GraphNode",
+    "KnowledgeGraph",
     "KnowledgeState",
     "LONGTERM_THRESHOLD_DAYS",
     "LongTermPolicy",
+    "PrereqGap",
     "Rating",
+    "Recommendation",
     "ReviewOutcome",
     "Scheduler",
     "StudyPolicy",
+    "build_graph",
+    "count_new_today",
+    "cram_score",
+    "daily_counters",
+    "due_kps",
+    "due_reviews",
+    "graph_from_state",
+    "kp_for_chapter",
+    "load_or_build",
+    "mark_new_chapter",
+    "mark_review",
+    "order_chapters",
     "policy_for_mode",
+    "recommend",
+    "review_plan",
     "select_policy",
+    "target_chapter",
+    "unmet_prerequisites",
 ]
