@@ -1,0 +1,1954 @@
+{
+ "experiment": "live_compare_real_courses_seven_arms",
+ "date": "2026-10-31",
+ "materials": "MIT 6.006 lec1-6 PDFs + Yale PSYC 110 lectures 1-4 transcripts (skill-repo samples; MIT OCW CC BY-NC-SA / Open Yale CC BY-NC-SA)",
+ "gold": "skill-repo full/benchmark/items pilot sets (10 answerable + 3 probes per course, 26 total; gold read by scorer only, never by answering arms)",
+ "scorer": "v2 token-set containment: gold content tokens (ASCII/digit len>=2, stopwords removed; CJK per char) >=80% covered by answer tokens = correct; probes correct only on refusal. v1 verbatim containment retired (see LIVE_COMPARE.md).",
+ "coverage_split_6006": {
+  "in": "algo_q1, algo_q2, algo_q6, algo_q7 (sorting / hashing / tree basics, first 6 lectures)",
+  "out": "algo_q3, algo_q4, algo_q5, algo_q8, algo_q9, algo_q10 (graph search / shortest paths / AVL / graph counting, lectures 7-13 or outside)",
+  "note": "PSYC 110 gold covers lecture 1 only and the transcripts fully cover it: no split needed."
+ },
+ "arms": {
+  "claude_raw": {
+   "label": "Muse Spark · 裸读（全文材料）",
+   "model": "Muse Spark (blind subagent)",
+   "correct": 12,
+   "answerable": 20,
+   "accuracy_pct": 60.0,
+   "probe_refused": 6,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 0,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": null,
+   "wall_seconds": null,
+   "cost_per_correct_usd": null,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "Θ(n log n)"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "O(log n)"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A FIFO queue",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stack (or recursion)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "10",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "3 (the deepest node is at depth 3, and height is defined as the max depth of any node in the subtree)"
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "Expected O(1) time (expected chain length is 1 + (n−1)/m = O(1) when m = Ω(n))"
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Non-negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "It handles negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "Neuroscience, developmental, cognitive, social, and clinical"
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "It takes a computational approach to studying the mind, often viewing the mind on analogy with a computer"
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "He lost his sense of right and wrong and his self-control (he could no longer hold a job, stay faithful, or control his behavior)"
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stroke",
+     "answer": "It is typically the result of some sort of stroke"
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 0.889,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "The delusion that the people you love the most have been replaced (by aliens, robots, impostors, etc.)"
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "That they are dead"
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "Peter Gray's Psychology, 5th edition (plus The Norton Reader edited by Gary Marcus)"
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth"
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin"
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "Two lectures per week"
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    }
+   ]
+  },
+  "claude_closed": {
+   "label": "Muse Spark · 闭卷",
+   "model": "Muse Spark (blind subagent)",
+   "correct": 11,
+   "answerable": 20,
+   "accuracy_pct": 55.0,
+   "probe_refused": 4,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 5,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": null,
+   "wall_seconds": null,
+   "cost_per_correct_usd": null,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "O(n log n)"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "O(log n)"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A FIFO queue",
+     "answer": "A queue (FIFO)"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stack (or recursion)",
+     "answer": "A stack (explicitly, or the call stack via recursion)"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "10",
+     "answer": "10 edges (C(5,2) = 10)"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "3 (levels 0-2 hold 7 nodes; the 8th node sits at depth 3)"
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "Theta(1 + alpha) expected time, where alpha is the load factor"
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Non-negative edge weights",
+     "answer": "Edge weights must be non-negative"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "It handles negative edge weights",
+     "answer": "It handles negative edge weights and can detect negative-weight cycles"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.625,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "A self-balancing binary search tree where, at every node, the heights of the left and right subtrees differ by at most 1"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": false,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "O(n log n)"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "不知道"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.333,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "It studies the mind as an information-processing (computational) system, investigating mental processes such as perception, memory, and reasoning through controlled experiments"
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.2,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "Much of his frontal lobe (destroyed by the tamping iron), and with it his impulse control and former personality"
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stroke",
+     "answer": "Brain damage that disconnects visual face recognition from the emotional/familiarity response, so a familiar face is recognized but feels unfamiliar"
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.333,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "The belief that close loved ones (e.g., spouse or family) have been replaced by identical-looking impostors"
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "That they are dead (or do not exist)"
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.6,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "Psychology by Peter Gray"
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth"
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin"
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "Two lectures per week"
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": false,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "1900 (published in late 1899, dated 1900)"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "不知道"
+    }
+   ]
+  },
+  "claude_agent_style": {
+   "label": "Muse Spark · Agent 式（逐题检索+引用，近似口径，非 examprep 管线）",
+   "model": "Muse Spark (blind subagent, per-question retrieval with citations; proxy for in-pipeline Muse, NOT the examprep pipeline)",
+   "correct": 11,
+   "answerable": 20,
+   "accuracy_pct": 55.0,
+   "probe_refused": 6,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 0,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": null,
+   "wall_seconds": null,
+   "cost_per_correct_usd": null,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "Θ(n log n) — the recurrence T(n) = 2T(n/2) + Θ(n) solves to Θ(n log n). [来源: MIT6_006S20_lec3.pdf + Merge Sort / merge sort analysis]"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "O(log n). [来源: MIT6_006S20_lec3.pdf + Sorting overview, \"faster finds via binary search: O(log n)\"]"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A FIFO queue",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stack (or recursion)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "10",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "3 — with depth(root) = 0 and height defined as the max depth of any node in the tree, a complete binary tree with 8 nodes fills depths 0, 1, 2 (7 nodes) and places the 8th node at depth 3, so the height is 3. [来源: MIT6_006S20_lec6.pdf + Terminology, depth/height definitions]"
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "Expected O(1) time — with keys roughly evenly distributed, the expected chain size is n/m = O(1), so search takes expected O(1) time. [来源: MIT6_006S20_lec4.pdf + Chaining]"
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Non-negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "It handles negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "Neuroscience, developmental, cognitive, social, and clinical. [来源: psyc110_lecture01.md + \"five sub-areas\"]"
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "It takes a computational approach to studying the mind, often viewing the mind on analogy with a computer. [来源: psyc110_lecture01.md + \"cognitive ... computational approach\"]"
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "He lost his sense of right and wrong and lost his control (self-control) — he could no longer hold a job or stay faithful, though he was not blind, deaf, or intellectually impaired. [来源: psyc110_lecture01.md + \"Phineas Gage\"]"
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stroke",
+     "answer": "It is typically the result of some sort of stroke (brain damage). [来源: psyc110_lecture01.md + \"Capgras syndrome is typically the result of some sort of stroke\"]"
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.778,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "The delusion that the people you love the most have been replaced — by aliens, robots, Martians, CIA agents, or trained actors and actresses. [来源: psyc110_lecture01.md + \"Capgras syndrome ... replaced\"]"
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "The person believes that he or she is dead, while walking around knowing that they are walking around and that there are people around. [来源: psyc110_lecture01.md + \"Cotard's syndrome ... you believe that you're dead\"]"
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "Peter Gray's Psychology, 5th edition (along with The Norton Reader, edited by Gary Marcus). [来源: psyc110_lecture01.md + \"textbook, Peter Gray's Psychology, 5th edition\"]"
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth. [来源: psyc110_lecture01.md + \"The child is father to the man\"]"
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin. [来源: psyc110_lecture01.md + \"Philip Larkin ... They mess you up, your mum and dad\"]"
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "Two lectures per week. [来源: psyc110_lecture01.md + \"two lectures a week\"]"
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": null,
+     "answer": "无法从材料中找到"
+    }
+   ]
+  },
+  "deepseek_raw": {
+   "label": "DeepSeek V4.1 Flash · 裸读（全文材料）",
+   "model": "deepseek-flash (DeepSeek V4.1 Flash)",
+   "correct": 11,
+   "answerable": 20,
+   "accuracy_pct": 55.0,
+   "probe_refused": 6,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 0,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": {
+    "api_calls": 26,
+    "prompt_tokens": 1259906,
+    "completion_tokens": 3276,
+    "cached_prompt_tokens": 1254656,
+    "total_tokens": 1263182,
+    "cost_usd_offpeak": 0.0065,
+    "cost_basis": "deepseek-flash off-peak rates (input $0.15/M, cache-hit $0.003/M, output $0.60/M); Saturday = off-peak all day"
+   },
+   "wall_seconds": 70.1,
+   "cost_per_correct_usd": 0.0006,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "Θ(n log n)"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "Θ(log n)"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A FIFO queue",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stack (or recursion)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "10",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "The height is **3** (depths 0–3; the 8th node is at depth 3)."
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "Under simple uniform hashing with chaining, the expected search time is **Θ(1 + α)**, where α = n/m is the load factor. Since the hash table uses m = Θ(n), α = O(1), so search takes **O(1) expected time**."
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Non-negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "It handles negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "The five traditional sub-areas of psychology are neuroscience, developmental, cognitive, social, and clinical psychology."
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "Two lectures per week."
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "Cognitive psychology takes a computational approach to the mind, often viewing the mind by analogy with a computer and studying how people do things like understand language, recognize objects, and play games. It treats the mind as an information processor and asks what sort of program can solve these problems and how that program could be instantiated in the physical brain."
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "Phineas Gage lost his sense of right and wrong and his self-control: he could not hold a job, stay faithful to his wife, or go five minutes without cursing, and he got into fights, brawls, and drunkenness."
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stroke",
+     "answer": "Capgras syndrome is typically the result of some sort of stroke."
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.778,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "In Capgras syndrome, the central delusion is that the people you love most have been replaced—by aliens, robots, Martians, CIA agents, or trained actors—so you believe the loved ones are gone."
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "A person with Cotard’s syndrome believes that they are dead."
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "Peter Gray’s *Psychology*, 5th edition, and *The Norton Reader*, edited by Gary Marcus."
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth."
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin."
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    }
+   ]
+  },
+  "deepseek_closed": {
+   "label": "DeepSeek V4.1 Flash · 闭卷",
+   "model": "deepseek-flash (DeepSeek V4.1 Flash)",
+   "correct": 10,
+   "answerable": 20,
+   "accuracy_pct": 50.0,
+   "probe_refused": 4,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 4,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": {
+    "api_calls": 26,
+    "prompt_tokens": 1714,
+    "completion_tokens": 2244,
+    "cached_prompt_tokens": 0,
+    "total_tokens": 3958,
+    "cost_usd_offpeak": 0.0016,
+    "cost_basis": "deepseek-flash off-peak rates (input $0.15/M, cache-hit $0.003/M, output $0.60/M); Saturday = off-peak all day"
+   },
+   "wall_seconds": 46.4,
+   "cost_per_correct_usd": 0.0002,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "O(n log n)"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.75,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "An AVL tree is a self-balancing binary search tree in which, for every node, the heights of its left and right subtrees differ by at most 1 (balance factor ∈ {−1, 0, 1}). Rotations restore balance after insertions/deletions, giving O(log n) search, insert, and delete time."
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "O(log n)"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A FIFO queue",
+     "answer": "Queue (FIFO)."
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stack (or recursion)",
+     "answer": "DFS typically uses a **stack** (LIFO) or **recursion** (which uses the call stack)."
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "10",
+     "answer": "10"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "3"
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "Under simple uniform hashing with chaining, the expected search time is **Θ(1 + α)**, where **α = n/m** is the load factor. If α is constant, this is **O(1)**."
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Non-negative edge weights",
+     "answer": "Non-negative edge weights."
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.75,
+     "gold": "It handles negative edge weights",
+     "answer": "Bellman-Ford can handle **negative edge weights** and detect **negative-weight cycles**, which Dijkstra’s algorithm cannot."
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": false,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "The time complexity of the Fast Fourier Transform (FFT) is **O(N log N)**."
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "不知道"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 0.8,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "The five traditional sub-areas are biological, cognitive, developmental, social, and clinical psychology."
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Two",
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.333,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "Cognitive psychology approaches the mind as an information-processing system: it infers internal mental processes from observable behavior and performance, using controlled experiments, reaction-time and error measures, computational models, and increasingly neuroimaging. It decomposes cognition into processes such as perception, attention, memory, language, and reasoning, and tests hypotheses about how information is encoded, represented, and transformed."
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.4,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "Phineas Gage lost part of his frontal lobe and, as a result, his personality and self-control changed; he also lost vision in his left eye."
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stroke",
+     "answer": "Capgras syndrome is typically the result of brain damage or organic brain disease—often frontal/temporal lesions or neurodegenerative illness—disrupting the connection between facial recognition and emotional familiarity."
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.111,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "The central delusion is that a familiar person (often a spouse or relative) has been replaced by an identical impostor or double."
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "A person with Cotard’s syndrome believes they are dead, nonexistent, or that their body is rotting or missing organs—sometimes described as “walking corpse syndrome.”"
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth."
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin."
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": false,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "1899 (though the title page is dated 1900)."
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "不知道"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "不知道"
+    }
+   ]
+  },
+  "dsh_agent": {
+   "label": "DeepSeek V4.1 Flash · dsh agent（工作区文件工具自由检索）",
+   "model": "deepseek-flash (DeepSeek V4.1 Flash) via DeepSeek Harness (dsh headless)",
+   "correct": 11,
+   "answerable": 20,
+   "accuracy_pct": 55.0,
+   "probe_refused": 6,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 2,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 0,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": {
+    "api_calls": 16,
+    "prompt_tokens": 548244,
+    "completion_tokens": 11437,
+    "cached_prompt_tokens": 507136,
+    "total_tokens": 559681,
+    "cost_usd_offpeak": 0.0145,
+    "cost_basis": "dsh headless --json step_end events summed; inputTokens treated as uncached prompt, cacheReadTokens as cached prompt; off-peak rates (Saturday)"
+   },
+   "wall_seconds": 96.6,
+   "cost_per_correct_usd": 0.0013,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "O(n log n), i.e. Θ(n log n), in the worst case."
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(log n)",
+     "answer": "O(log n)."
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A FIFO queue",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stack (or recursion)",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "10",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "3 (root at depth 0: levels 0–2 are full and one node is at depth 3)."
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "O(1) expected time (expected chain length Θ(1 + α), which is O(1) when the load factor α = O(1))."
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Non-negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "It handles negative edge weights",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "Neuroscience, developmental, cognitive, social, and clinical psychology."
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "Two lectures per week."
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "It takes a computational approach, often viewing the mind by analogy with a computer, and studies how people do things such as understand language, recognize objects, and play games."
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "He lost his sense of right and wrong and his self-control; he became impulsive, could not hold a job, and could not stay faithful to his wife."
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stroke",
+     "answer": "Typically a stroke (brain damage)."
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": false,
+     "correct": false,
+     "token_frac": 0.778,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "That the people he or she loves most have been replaced by impostors—aliens, robots, Martians, CIA agents, or trained actors—so the loved ones are believed to be gone."
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "That he or she is dead."
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "Peter Gray's Psychology, 5th edition (with The Norton Reader, edited by Gary Marcus, as a collection of short readings)."
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "William Wordsworth",
+     "answer": "William Wordsworth."
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "Philip Larkin."
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "无法从材料中找到"
+    }
+   ]
+  },
+  "examprep_agent": {
+   "label": "examprep-agent 生产管线（摄取 + StudyService.ask subagent=True，DeepSeek V4.1 Flash）",
+   "model": "deepseek-flash (DeepSeek V4.1 Flash) via StudyService.ask retrieval subagent",
+   "correct": 6,
+   "answerable": 20,
+   "accuracy_pct": 30.0,
+   "probe_refused": 6,
+   "probes": 6,
+   "coverage_6006": {
+    "in": {
+     "correct": 1,
+     "total": 4,
+     "ids": [
+      "algo_q1",
+      "algo_q2",
+      "algo_q6",
+      "algo_q7"
+     ]
+    },
+    "out": {
+     "correct": 0,
+     "total": 6,
+     "ids": [
+      "algo_q3",
+      "algo_q4",
+      "algo_q5",
+      "algo_q8",
+      "algo_q9",
+      "algo_q10"
+     ]
+    }
+   },
+   "cost": {
+    "api_calls": 84,
+    "prompt_tokens": 76019,
+    "completion_tokens": 20900,
+    "cached_prompt_tokens": 13952,
+    "total_tokens": 96919,
+    "cost_usd_offpeak": 0.0219,
+    "cost_basis": "deepseek-flash off-peak rates (input $0.15/M, cache-hit $0.003/M, output $0.60/M); Saturday = off-peak all day"
+   },
+   "wall_seconds": 225.2,
+   "cost_per_correct_usd": 0.0037,
+   "records": [
+    {
+     "id": "algo_q1",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "O(n log n)",
+     "answer": "**Merge sort worst-case complexity: Θ(n log n)**\n\nWhat the materials say:\n\n- **Recurrence** (`MIT6_006S20_lec3.pdf p.5`): merge sort satisfies T(1) = Θ(1), T(n) = 2T(n/2) + Θ(n). The split recursion contributes 2T(n/2) and the merge step / temporary-copy step is Θ(n)/O(n).\n- **Solving it** (same page, `lec3.pdf p.5`): by substitution, the guess T(n) = Θ(n log n) is verified (cn log n = Θ(n) + 2c(n/2)log(n/2) ⇒ cn log 2 = Θ(n)); by recurrence tree, it is a complete binary tree of depth log₂n with n leaves, where level i has 2ⁱ nodes doing O(n/2ⁱ) work each, giving a total that sums to Θ(n log n).\n- **Summary table** (`MIT6_006S20_lec5.pdf p.4`): Merge Sort is listed with time **n log n**, not in-place, stable, annotated \"stable, optimal comparison.\"\n- **Optimality / lower bound** (`MIT6_00…"
+    },
+    {
+     "id": "algo_q10",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A self-balancing binary search tree that keeps height O(log n)",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q2",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(log n)",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A FIFO queue",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q4",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A stack (or recursion)",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "10",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q6",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "3",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q7",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "O(1)",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Non-negative edge weights",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_q9",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "It handles negative edge weights",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "algo_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q1",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "Neuroscience, developmental, cognitive, social, and clinical",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q10",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Two",
+     "answer": "**Two lectures per week** — plus course readings.\n\nThe course material states: \"there'll be two lectures a week, as well as course readings,\" and adds that doing well requires attending both the lectures and doing the readings, since the two overlap only partly (some reading material won't appear in lectures, and some lectures don't connect to the readings at all).\n\nSource: `psyc110_lecture01.md` p.1.\n\nRelated schedule detail from the same page: written questions are posted each Monday starting the third week of class, to be answered and sent to your assigned teaching fellow."
+    },
+    {
+     "id": "psyc_q2",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "A computational approach, often viewing the mind by analogy with a computer",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q3",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "His sense of right and wrong, and his self-control",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q4",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "A stroke",
+     "answer": "**Capgras syndrome — typical cause (per course material):**\n\n- It is typically the result of **some sort of stroke**, and the resulting deficit is described as very specific (psyc110_lecture01.md p.1).\n- It's a rare condition — only hundreds of cases exist (psyc110_lecture01.md p.1).\n- Related notes: it is associated with a very high level of violence (an example given of a man in Australia who believed his father had been replaced by a robot), and a related disorder involving the very same parts of the brain is **Cotard's syndrome** (the belief that one is dead) (psyc110_lecture01.md p.1).\n- Cases like Capgras are said to be important because they tell us about how we see the world (psyc110_lecture01.md p.1).\n\nThe material does not go into further detail on the specific brain regions or…"
+    },
+    {
+     "id": "psyc_q5",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "The belief that the people you love most have been replaced (by aliens, robots, or impostors)",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q6",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "That they are dead",
+     "answer": "**What the material says about Cotard's syndrome**\n\n- Cotard's syndrome is described as a related disorder to Capgras syndrome, \"involving the very same parts of the brain,\" and it is defined as *believing that you're dead* — \"you are persuaded that you're dead.\" The person is walking around, knows they are walking around, and knows there are people around, but still thinks they are dead (psyc110_lecture01.md p.1).\n- The lecture notes that these delusions are not just vague, \"screwy\" problems but something more specific (psyc110_lecture01.md p.1).\n\n**Context given nearby:** Capgras syndrome involves the delusion that the people you care about most — e.g., loved ones, parents — have been replaced by aliens, robots, Martians, CIA agents or trained actors, and it is associated with high leve…"
+    },
+    {
+     "id": "psyc_q7",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Peter Gray's Psychology, 5th edition",
+     "answer": "The course materials do now establish the textbooks (earlier this was unresolved):\n\n- **Main textbook:** Peter Gray, *Psychology*, 5th edition.\n- **Additional collection of short readings:** *The Norton Reader*, edited by Gary Marcus.\n\nBoth are described as works students should get; they're noted as available at Labyrinth bookstore on York Street or online, and used copies may be circulating since both were used in prior offerings of the course (the Marcus Reader in the instructor's previous term; Gray's 5th edition in Prof. Marvin Chun's section) — `psyc110_lecture01.md p.1`.\n\nAlso confirmed in `psyc110_lecture02.md p.1`, where the instructor holds up \"the textbook, 5th edition,\" consistent with the above."
+    },
+    {
+     "id": "psyc_q8",
+     "answerable": true,
+     "refused": true,
+     "correct": false,
+     "token_frac": 0.0,
+     "gold": "William Wordsworth",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_q9",
+     "answerable": true,
+     "refused": false,
+     "correct": true,
+     "token_frac": 1.0,
+     "gold": "Philip Larkin",
+     "answer": "**Attribution found.**\n\n- The course material attributes the line to the British poet **Philip Larkin** (`psyc110_lecture01.md p.1`). The lecture introduces it while summarising the common theory that we are shaped by our parents: \"This was best summarized most famously by the British poet Philip Larkin who wrote…\" followed by the quoted lines.\n- The quote itself appears as: *\"They mess you up, your mum and dad. They may not mean to but they do. They fill you with the faults they had / And add some extra just for you.\"* (`psyc110_lecture01.md p.1`). The lecturer then asks \"Is he right?\" and notes that how much parents matter has been \"a huge controversy in the popular culture\" — a theme revisited through the course.\n\nTwo caveats:\n- The material gives no poem title, so I can't confirm the…"
+    },
+    {
+     "id": "psyc_u1",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_u2",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    },
+    {
+     "id": "psyc_u3",
+     "answerable": false,
+     "refused": true,
+     "correct": null,
+     "token_frac": null,
+     "gold": "",
+     "answer": "[sub-agent produced no safe summary]"
+    }
+   ]
+  }
+ },
+ "notes": {
+  "examprep_x_claude_cell": "No examprep-pipeline arm exists for Muse: the pipeline's model is DeepSeek V4.1 Flash via its provider, and no Claude API access was available. claude_agent_style is a per-question retrieval proxy, not the examprep pipeline.",
+  "v2_empty_gold": "algo_q6 (gold '3') and algo_q7 (gold 'O(1)') have empty v2 token sets, so they score 0 for every arm by construction; 6.006 in-coverage accuracy is capped at 2/4 = 50% under v2."
+ }
+}

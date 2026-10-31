@@ -909,7 +909,7 @@ class StudyService:
             ask_hits.append(AskHit(
                 chapter=chunk.get("chapter"), file=chunk.get("file", ""), page=chunk.get("page", 0),
                 score=score, text=text,
-                figures=[f["path"] for f in figures_for_pages(figures, [(chunk["file"], chunk["page"])])],
+                figures=[f.path for f in figures_for_pages(figures, [(chunk["file"], chunk["page"])])],
             ))
         summary = None
         if subagent and provider is not None:
