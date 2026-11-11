@@ -7,17 +7,18 @@
 [![CI](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**状态：P1 地基（模型层与 Agent 运行时）与 P2 资料引擎已完成；讲解、出题、判分的学习闭环（P3）开发中。**
-
-现在已经可以把一门课的资料导入并检索：
+**状态：P1 地基、P2 资料引擎、P3a 学习闭环核心（命令行）已完成；服务接口与 Web 界面开发中。**
 
 ```bash
 uv sync
-uv run examprep ingest samples/zh-data-structures      # 章节、题目（含答案配对）、配图、证据块
-uv run examprep search zh-data-structures 循环队列 判满
-uv run python samples/fetch.py mit-6006                # 下载 MIT 6.006 公开课样例
-uv run examprep ingest samples/mit-6006
+uv run examprep ingest samples/zh-data-structures      # 导入：章节、题目（含答案配对）、配图、证据块
+uv run examprep search zh-data-structures 循环队列 判满  # 检索，带文件和页码
+export DEEPSEEK_API_KEY=sk-...                          # 或 OPENAI / ANTHROPIC / GEMINI 的 Key，或本地 Ollama
+uv run examprep study zh-data-structures               # 开始学：讲解 → 检查 → 练习 → 判分 → 小结
 ```
+
+学习时直接说“继续”“考考我”“没懂”“给个提示”“看答案”“跳到第 3 章”“进度”，或者直接提问。
+讲解里的出处（文件 + 页码）由系统根据证据编号生成，模型写不出不存在的页码；资料里没有的问题会直接回答“资料里没有讲到”。
 
 ExamPrep Agent 从 [Exam Cram Coach Skill](https://github.com/ZeKaiNie/universal-examprep-skill) 演进而来，是一个独立的开源学习 Agent。
 
