@@ -10,7 +10,7 @@
 - [x] 8. `ingest/parse.py`、`ingest/events.py`、`ingest/pipeline.py` + 测试（R4、R5）
 - [x] 9. `cli.py`：ingest、search、courses + `catalog.py` + 测试（R6）
 - [x] 10. 样例：`samples/zh-data-structures`、`samples/fetch.py`；golden 快照（由 Skill v5.3 输出生成）与对比测试
-- [ ] 11. 验收：覆盖率、ruff、pyright、耗时对比、CI；更新项目记忆
+- [x] 11. 验收：覆盖率、ruff、pyright、耗时对比、CI（三系统 × 3.11/3.12 全绿；CI 上没有 MIT 样例，相关 2 个测试跳过）；更新项目记忆
 
 ## 验收记录（2026-11-11，本机 Windows，Python 3.12）
 
