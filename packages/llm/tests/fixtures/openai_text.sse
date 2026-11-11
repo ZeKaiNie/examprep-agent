@@ -1,0 +1,12 @@
+data: {"id":"chatcmpl-2","object":"chat.completion.chunk","created":1762800001,"model":"deepseek-chat","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-2","object":"chat.completion.chunk","created":1762800001,"model":"deepseek-chat","choices":[{"index":0,"delta":{"content":"北京今天"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-2","object":"chat.completion.chunk","created":1762800001,"model":"deepseek-chat","choices":[{"index":0,"delta":{"content":"晴，25 度。"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-2","object":"chat.completion.chunk","created":1762800001,"model":"deepseek-chat","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}]}
+
+data: {"id":"chatcmpl-2","object":"chat.completion.chunk","created":1762800001,"model":"deepseek-chat","choices":[],"usage":{"prompt_tokens":150,"completion_tokens":12,"total_tokens":162,"prompt_tokens_details":{"cached_tokens":128},"prompt_cache_hit_tokens":128,"prompt_cache_miss_tokens":22}}
+
+data: [DONE]
+

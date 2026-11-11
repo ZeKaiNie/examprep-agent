@@ -1,0 +1,4 @@
+data: {"candidates": [{"content": {"parts": [{"text": "**查询天气**\n需要调用工具。","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 80,"totalTokenCount": 80,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 80}]},"modelVersion": "gemini-2.5-flash","responseId": "resp_g1"}
+
+data: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "get_weather","args": {"city": "北京"}},"thoughtSignature": "CiQBVKhc7g=="}],"role": "model"},"finishReason": "STOP","index": 0}],"usageMetadata": {"promptTokenCount": 80,"candidatesTokenCount": 15,"totalTokenCount": 120,"cachedContentTokenCount": 30,"thoughtsTokenCount": 25},"modelVersion": "gemini-2.5-flash","responseId": "resp_g1"}
+

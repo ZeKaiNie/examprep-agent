@@ -1,0 +1,4 @@
+data: {"candidates": [{"content": {"parts": [{"text": "北京今天"}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 140,"totalTokenCount": 140},"modelVersion": "gemini-2.5-flash","responseId": "resp_g2"}
+
+data: {"candidates": [{"content": {"parts": [{"text": "晴，25 度。"}],"role": "model"},"finishReason": "STOP","index": 0}],"usageMetadata": {"promptTokenCount": 140,"candidatesTokenCount": 10,"totalTokenCount": 150},"modelVersion": "gemini-2.5-flash","responseId": "resp_g2"}
+

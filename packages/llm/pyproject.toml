@@ -1,0 +1,23 @@
+[project]
+name = "kaopu-llm"
+version = "0.1.0.dev0"
+description = "Kaopu L1：多厂商统一模型接口（OpenAI 兼容、Anthropic、Gemini），含能力表与网关"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "ZeKaiNie" }]
+dependencies = ["httpx>=0.27", "pydantic>=2.7"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kaopu_llm"]

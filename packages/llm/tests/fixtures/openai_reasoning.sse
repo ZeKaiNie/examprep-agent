@@ -1,0 +1,12 @@
+data: {"id":"chatcmpl-3","object":"chat.completion.chunk","created":1762800002,"model":"deepseek-reasoner","choices":[{"index":0,"delta":{"role":"assistant","content":null,"reasoning_content":""},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-3","object":"chat.completion.chunk","created":1762800002,"model":"deepseek-reasoner","choices":[{"index":0,"delta":{"content":null,"reasoning_content":"用户问 1+1，"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-3","object":"chat.completion.chunk","created":1762800002,"model":"deepseek-reasoner","choices":[{"index":0,"delta":{"content":null,"reasoning_content":"答案是 2。"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-3","object":"chat.completion.chunk","created":1762800002,"model":"deepseek-reasoner","choices":[{"index":0,"delta":{"content":"等于 2。","reasoning_content":null},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-3","object":"chat.completion.chunk","created":1762800002,"model":"deepseek-reasoner","choices":[{"index":0,"delta":{"content":"","reasoning_content":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":30,"total_tokens":40,"completion_tokens_details":{"reasoning_tokens":24}}}
+
+data: [DONE]
+

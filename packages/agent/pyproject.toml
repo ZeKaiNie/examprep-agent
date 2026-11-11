@@ -1,0 +1,26 @@
+[project]
+name = "kaopu-agent"
+version = "0.1.0.dev0"
+description = "Kaopu L2：通用 Agent 运行时（循环、工具、事件溯源会话、lane、子 Agent、上下文组装）"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "ZeKaiNie" }]
+dependencies = ["kaopu-llm", "pydantic>=2.7"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+
+[tool.uv.sources]
+kaopu-llm = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kaopu_agent"]
