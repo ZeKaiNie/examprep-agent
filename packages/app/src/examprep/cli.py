@@ -1,4 +1,4 @@
-"""命令行入口：examprep ingest / search / courses（R6）。"""
+"""命令行入口：examprep ingest / search / courses / study。"""
 
 from __future__ import annotations
 
@@ -7,18 +7,26 @@ import asyncio
 import json
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import TextIO
+
+from examprep_llm import Gateway
+from examprep_runtime.session import SQLiteEventStore
 
 from . import __version__
 from .catalog import CourseNotFoundError, find_course, list_courses, load_evidence
 from .ingest import guard
 from .ingest.events import FileDone, FileFailed, IngestEvent, IngestReport
-from .ingest.pipeline import ingest
+from .ingest.pipeline import COURSES_DIR, ingest
 from .ingest.text import shorten
+from .settings import SettingsError, load_settings
 from .store import Database
 from .store.jobs import IngestBusyError
+from .study.console import run_console
+from .study.session import StudyOptions, StudySession
+
+SESSIONS_DB = "sessions.db"
 
 KIND_NAMES = {
     "lecture": "课件",
@@ -60,6 +68,19 @@ def _parser() -> argparse.ArgumentParser:
     ps.add_argument("--json", action="store_true")
 
     sub.add_parser("courses", help="列出已导入的课程")
+
+    pt = sub.add_parser("study", help="开始或继续学习一门课（交互式）")
+    pt.add_argument("course", help="课程名称、id 或资料目录")
+    pt.add_argument("--mode", choices=["cram", "longterm"], default=None, help="突击 / 长期")
+    pt.add_argument("--level", choices=["zero", "weak", "gap"], default=None, help="零基础 / 补弱 / 查缺")
+    pt.add_argument("--exam-date", default=None, help="考试日期 YYYY-MM-DD")
+    pt.add_argument(
+        "--profile",
+        choices=["small", "standard", "large"],
+        default=None,
+        help="每段讲多少（默认按模型自动选）",
+    )
+    pt.add_argument("--no-verify", action="store_true", help="不做逐句核对（更快、更省）")
     return p
 
 
@@ -164,7 +185,52 @@ async def _courses(data_dir: Path, out: TextIO) -> int:
     return 0
 
 
-def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int:
+async def _study(
+    args: argparse.Namespace,
+    data_dir: Path,
+    out: TextIO,
+    read_line: Callable[[], str],
+    gateway: Gateway | None,
+) -> int:
+    db = Database.in_dir(data_dir)
+    store = SQLiteEventStore(data_dir / SESSIONS_DB)
+    gw = gateway
+    try:
+        course = await find_course(db, args.course)
+        if gw is None:
+            gw = Gateway.from_config(load_settings(data_dir))
+        tutor = gw.chain(role="tutor")[0]
+        session = await StudySession.open(
+            db,
+            gw,
+            course.id,
+            events=store,
+            options=StudyOptions(
+                mode=args.mode, level=args.level, exam_date=args.exam_date, profile=args.profile
+            ),
+            context_window=gw.model_info(tutor).context_window,
+            verify_answers=not args.no_verify,
+        )
+        out.write(f"开始学习：{course.name}（讲解模型 {tutor}）。输入“退出”结束，进度会自动保存。\n")
+        return await run_console(session, out, read_line, data_dir / COURSES_DIR / course.id)
+    except (CourseNotFoundError, SettingsError) as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 2
+    finally:
+        await store.close()
+        if gw is not None and gateway is None:
+            await gw.aclose()
+        await db.close()
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    out: TextIO | None = None,
+    read_line: Callable[[], str] | None = None,
+    gateway: Gateway | None = None,
+) -> int:
+    """``read_line`` 与 ``gateway`` 供测试注入（脚本化输入、假模型）。"""
     stream = out or sys.stdout
     reconfigure = getattr(sys.stdout, "reconfigure", None) if out is None else None
     if callable(reconfigure):
@@ -175,4 +241,6 @@ def main(argv: Sequence[str] | None = None, *, out: TextIO | None = None) -> int
         return asyncio.run(_ingest(args, data_dir, stream))
     if args.command == "search":
         return asyncio.run(_search(args, data_dir, stream))
+    if args.command == "study":
+        return asyncio.run(_study(args, data_dir, stream, read_line or sys.stdin.readline, gateway))
     return asyncio.run(_courses(data_dir, stream))
