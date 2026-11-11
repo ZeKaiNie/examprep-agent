@@ -34,6 +34,7 @@ src = ["packages/llm/src", "packages/agent/src"]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC", "PT", "C4", "PIE", "RET"]
 ignore = [
   "E501",   # 行宽交给 ruff format；中文注释按显示宽度计算容易误报
+  "ASYNC109", # run_subagent 等接口有意提供 timeout 参数（内部用 call_later 取消令牌实现）
   "RUF001", # 中文全角标点
   "RUF002",
   "RUF003",

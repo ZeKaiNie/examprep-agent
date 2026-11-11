@@ -7,7 +7,7 @@ P1 不依赖 tiktoken（离线环境下载编码表会失败），用启发式�
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from .types import (
     AssistantMessage,
@@ -75,17 +75,23 @@ def estimate_messages_tokens(messages: Iterable[Message]) -> int:
     return sum(estimate_message_tokens(m) for m in messages)
 
 
-def truncate_to_tokens(text: str, max_tokens: int, *, mark: str = TRUNCATION_MARK) -> str:
-    """截掉尾部使估算 token 数不超过 ``max_tokens``（含截断标记）。不需要截断时原样返回。"""
-    if estimate_tokens(text) <= max_tokens:
+def truncate_to_tokens(
+    text: str,
+    max_tokens: int,
+    *,
+    mark: str = TRUNCATION_MARK,
+    counter: Callable[[str], int] = estimate_tokens,
+) -> str:
+    """截掉尾部使 token 数不超过 ``max_tokens``（含截断标记）。不需要截断时原样返回；放不下标记时返回空串。"""
+    if counter(text) <= max_tokens:
         return text
-    budget = max_tokens - estimate_tokens(mark)
+    budget = max_tokens - counter(mark)
     if budget <= 0:
         return ""
     lo, hi = 0, len(text)
-    while lo < hi:  # 二分找最长前缀
+    while lo < hi:  # 二分找最长前缀（计数函数对前缀单调）
         mid = (lo + hi + 1) // 2
-        if estimate_tokens(text[:mid]) <= budget:
+        if counter(text[:mid]) <= budget:
             lo = mid
         else:
             hi = mid - 1

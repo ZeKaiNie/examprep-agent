@@ -23,12 +23,11 @@ kaopu/                                  # 仓库根（即本工作区）
 ├ packages/
 │  ├ llm/   pyproject.toml  README.md  src/kaopu_llm/   tests/
 │  └ agent/ pyproject.toml  README.md  src/kaopu_agent/ tests/
-├ tests/                                # 跨包集成：三协议回放验收、在线测试
-├ scripts/check_versions.py             # 校验各包版本号一致
+├ tests/                                # 跨包集成：版本一致性、三协议回放验收、在线测试
 └ docs/design/  .kiro/
 ```
 
-- 构建后端：hatchling（src 布局）。两个包版本号同为 `0.1.0.dev0`，由 `tests/test_versions.py` 校验一致。
+- 构建后端：hatchling（src 布局）。两个包与根项目版本号同为 `0.1.0.dev0`，由 `tests/test_versions.py` 校验一致。
 - 开发依赖放根 `[dependency-groups] dev`：pytest、pytest-asyncio、pytest-cov、ruff、`pyright[nodejs]`（自带 Node，不依赖本机 Node 16）。
 - pytest 用 `--import-mode=importlib`，`asyncio_mode = "auto"`；在线测试标 `live`，默认跳过。
 
@@ -302,6 +301,15 @@ class FakeProvider:                      # 实现 Provider 协议，protocol = "
 ```
 
 `FakeClock`：`now()` 返回虚拟时间；`sleep(d)` 推进虚拟时间并 `await asyncio.sleep(0)`。
+
+`sse_text()` 构造 SSE 文本；`sse_response()` 返回按字节切块的流式响应，底层 `ChunkedStream` 可在某块后挂起并记录是否被关闭（用于验证取消会关闭 HTTP 流）。
+
+## 2.12 实现中的补充决定
+
+- 网关**暂扣 StartEvent**，直到第一个内容事件出现才一起转发。这样“200 之后、内容之前”的流中错误仍可安全重试。
+- 额度不足（402、`insufficient_quota`）映射为 `QuotaExceededError`（`AuthenticationError` 子类）：不重试，但降级到下一个模型。
+- `truncate_to_tokens` 接受自定义 `counter`，上下文组装用同一个计数函数截断与统计。
+- 工具参数 schema 去掉顶层 `title` 与 `description`（参数模型的 docstring 不发给模型）。
 
 ## 3. kaopu_agent（L2）
 

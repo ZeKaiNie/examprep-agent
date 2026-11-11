@@ -9,6 +9,7 @@ dist/
 
 # 虚拟环境与工具缓存
 .venv/
+.venv*/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
