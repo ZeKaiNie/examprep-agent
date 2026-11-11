@@ -1,0 +1,278 @@
+{
+ "chapters": [
+  {
+   "n": 1,
+   "title": "线性表",
+   "sources": [
+    "第1章_线性表.md"
+   ],
+   "figures": []
+  },
+  {
+   "n": 2,
+   "title": "栈和队列",
+   "sources": [
+    "第2章_栈和队列.md"
+   ],
+   "figures": []
+  },
+  {
+   "n": 3,
+   "title": "树与二叉树",
+   "sources": [
+    "第3章_树.md"
+   ],
+   "figures": []
+  }
+ ],
+ "questions": [
+  {
+   "id": "q001",
+   "number": 1,
+   "label": "1",
+   "type": "choice",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 4,
+   "points": null,
+   "source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q002",
+   "number": 2,
+   "label": "2",
+   "type": "fill_blank",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q003",
+   "number": 3,
+   "label": "3",
+   "type": "true_false",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q004",
+   "number": 4,
+   "label": "4",
+   "type": "subjective",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q005",
+   "number": 5,
+   "label": "5",
+   "type": "subjective",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": false,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "作业2_栈和队列.txt",
+    "page": 1
+   },
+   "answer_source": null,
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q006",
+   "number": 1,
+   "label": "1",
+   "type": "choice",
+   "chapter": 1,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 4,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q007",
+   "number": 2,
+   "label": "2",
+   "type": "choice",
+   "chapter": 1,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 4,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q008",
+   "number": 3,
+   "label": "3",
+   "type": "choice",
+   "chapter": 3,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 4,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q009",
+   "number": 1,
+   "label": "1",
+   "type": "fill_blank",
+   "chapter": 3,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q010",
+   "number": 2,
+   "label": "2",
+   "type": "fill_blank",
+   "chapter": 2,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q011",
+   "number": 1,
+   "label": "1",
+   "type": "subjective",
+   "chapter": 3,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q012",
+   "number": 2,
+   "label": "2",
+   "type": "subjective",
+   "chapter": 3,
+   "chapter_guessed": true,
+   "has_answer": false,
+   "options": 0,
+   "points": null,
+   "source": {
+    "file": "期末模拟卷.txt",
+    "page": 1
+   },
+   "answer_source": null,
+   "figures": 0,
+   "answer_figures": 0
+  }
+ ],
+ "figures": [],
+ "crops": 0
+}

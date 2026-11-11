@@ -1,0 +1,586 @@
+{
+ "chapters": [
+  {
+   "n": 1,
+   "title": "Introduction",
+   "sources": [
+    "MIT6_006S20_lec1.pdf"
+   ],
+   "figures": []
+  },
+  {
+   "n": 2,
+   "title": "Data Structures",
+   "sources": [
+    "MIT6_006S20_lec2.pdf"
+   ],
+   "figures": []
+  },
+  {
+   "n": 3,
+   "title": "Sorting",
+   "sources": [
+    "MIT6_006S20_lec3.pdf"
+   ],
+   "figures": []
+  },
+  {
+   "n": 4,
+   "title": "Hashing",
+   "sources": [
+    "MIT6_006S20_lec4.pdf"
+   ],
+   "figures": []
+  },
+  {
+   "n": 5,
+   "title": "Linear Sorting",
+   "sources": [
+    "MIT6_006S20_lec5.pdf"
+   ],
+   "figures": []
+  },
+  {
+   "n": 6,
+   "title": "Binary Trees I",
+   "sources": [
+    "MIT6_006S20_lec6.pdf"
+   ],
+   "figures": []
+  }
+ ],
+ "questions": [
+  {
+   "id": "q001",
+   "number": 1,
+   "label": "1",
+   "type": "subjective",
+   "chapter": 1,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 2,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 2
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 2
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q002",
+   "number": 2,
+   "label": "2",
+   "type": "subjective",
+   "chapter": 5,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 8,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 3
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 3
+   },
+   "figures": 1,
+   "answer_figures": 1
+  },
+  {
+   "id": "q003",
+   "number": 3,
+   "label": "3",
+   "type": "subjective",
+   "chapter": 6,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 10,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 4
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 4
+   },
+   "figures": 1,
+   "answer_figures": 1
+  },
+  {
+   "id": "q004",
+   "number": 4,
+   "label": "4",
+   "type": "subjective",
+   "chapter": 6,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 10,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 5
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 5
+   },
+   "figures": 1,
+   "answer_figures": 1
+  },
+  {
+   "id": "q005",
+   "number": 5,
+   "label": "5",
+   "type": "subjective",
+   "chapter": 5,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 20,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 6
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 6
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q006",
+   "number": 6,
+   "label": "6",
+   "type": "subjective",
+   "chapter": 5,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 15,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 8
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 8
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q007",
+   "number": 7,
+   "label": "7",
+   "type": "subjective",
+   "chapter": 6,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 15,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 9
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 9
+   },
+   "figures": 0,
+   "answer_figures": 0
+  },
+  {
+   "id": "q008",
+   "number": 8,
+   "label": "8",
+   "type": "subjective",
+   "chapter": 1,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 20,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 10
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 10
+   },
+   "figures": 1,
+   "answer_figures": 1
+  },
+  {
+   "id": "q009",
+   "number": 9,
+   "label": "9",
+   "type": "subjective",
+   "chapter": 1,
+   "chapter_guessed": true,
+   "has_answer": true,
+   "options": 0,
+   "points": 20,
+   "source": {
+    "file": "MIT6_006S20_q1.pdf",
+    "page": 11
+   },
+   "answer_source": {
+    "file": "MIT6_006S20_q1_sol.pdf",
+    "page": 11
+   },
+   "figures": 1,
+   "answer_figures": 1
+  }
+ ],
+ "figures": [
+  [
+   "MIT6_006S20_lec1.pdf",
+   2,
+   [
+    89,
+    65,
+    556,
+    126
+   ]
+  ],
+  [
+   "MIT6_006S20_lec2.pdf",
+   1,
+   [
+    72,
+    166,
+    507,
+    326
+   ]
+  ],
+  [
+   "MIT6_006S20_lec2.pdf",
+   2,
+   [
+    72,
+    392,
+    539,
+    538
+   ]
+  ],
+  [
+   "MIT6_006S20_lec2.pdf",
+   2,
+   [
+    72,
+    72,
+    517,
+    146
+   ]
+  ],
+  [
+   "MIT6_006S20_lec2.pdf",
+   3,
+   [
+    72,
+    338,
+    528,
+    412
+   ]
+  ],
+  [
+   "MIT6_006S20_lec2.pdf",
+   4,
+   [
+    72,
+    170,
+    548,
+    273
+   ]
+  ],
+  [
+   "MIT6_006S20_lec3.pdf",
+   1,
+   [
+    72,
+    247,
+    543,
+    335
+   ]
+  ],
+  [
+   "MIT6_006S20_lec3.pdf",
+   1,
+   [
+    72,
+    448,
+    539,
+    595
+   ]
+  ],
+  [
+   "MIT6_006S20_lec4.pdf",
+   1,
+   [
+    110,
+    481,
+    502,
+    587
+   ]
+  ],
+  [
+   "MIT6_006S20_lec4.pdf",
+   4,
+   [
+    92,
+    76,
+    520,
+    217
+   ]
+  ],
+  [
+   "MIT6_006S20_lec5.pdf",
+   1,
+   [
+    92,
+    232,
+    520,
+    374
+   ]
+  ],
+  [
+   "MIT6_006S20_lec5.pdf",
+   4,
+   [
+    89,
+    65,
+    495,
+    172
+   ]
+  ],
+  [
+   "MIT6_006S20_lec6.pdf",
+   1,
+   [
+    72,
+    328,
+    571,
+    596
+   ]
+  ],
+  [
+   "MIT6_006S20_lec6.pdf",
+   5,
+   [
+    72,
+    464,
+    543,
+    658
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   1,
+   [
+    206,
+    172,
+    406,
+    338
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   3,
+   [
+    318,
+    62,
+    542,
+    560
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   3,
+   [
+    78,
+    234,
+    296,
+    361
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   3,
+   [
+    78,
+    78,
+    296,
+    204
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   4,
+   [
+    101,
+    295,
+    530,
+    374
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   4,
+   [
+    101,
+    410,
+    530,
+    489
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   4,
+   [
+    101,
+    525,
+    530,
+    604
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   5,
+   [
+    220,
+    540,
+    392,
+    630
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   10,
+   [
+    72,
+    392,
+    523,
+    451
+   ]
+  ],
+  [
+   "MIT6_006S20_q1.pdf",
+   11,
+   [
+    72,
+    483,
+    503,
+    571
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   1,
+   [
+    206,
+    172,
+    406,
+    338
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   3,
+   [
+    318,
+    63,
+    542,
+    561
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   3,
+   [
+    78,
+    235,
+    296,
+    362
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   3,
+   [
+    78,
+    79,
+    296,
+    206
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   4,
+   [
+    101,
+    295,
+    530,
+    374
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   4,
+   [
+    101,
+    410,
+    530,
+    489
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   4,
+   [
+    101,
+    525,
+    530,
+    604
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   5,
+   [
+    220,
+    540,
+    392,
+    630
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   10,
+   [
+    72,
+    402,
+    523,
+    461
+   ]
+  ],
+  [
+   "MIT6_006S20_q1_sol.pdf",
+   11,
+   [
+    72,
+    483,
+    503,
+    572
+   ]
+  ]
+ ],
+ "crops": 10
+}

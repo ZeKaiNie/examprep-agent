@@ -31,6 +31,10 @@ htmlcov/
 # Agent 临时脚本（放在工作区内，避免操作工作区外路径触发确认）
 .tmp/
 
+# 下载的公开课样例（CC BY-NC-SA，不入库）
+samples/mit-6006/
+samples/yale-psyc110/
+
 # Kiro 本机记忆（含本机路径与个人偏好，不公开）
 .kiro/steering/
 
