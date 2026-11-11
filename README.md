@@ -20,6 +20,8 @@ uv run examprep study zh-data-structures               # 开始学：讲解 → 
 学习时直接说“继续”“考考我”“没懂”“给个提示”“看答案”“跳到第 3 章”“进度”，或者直接提问。
 讲解里的出处（文件 + 页码）由系统根据证据编号生成，模型写不出不存在的页码；资料里没有的问题会直接回答“资料里没有讲到”。
 
+讲解、判分、核对默认都开启模型的思考模式（`high`），因为讲解里的例子要算对、判分要准。想更快、更省，可以在数据目录的 `config.toml` 里用 `[reasoning]` 按角色调整（`off` / `low` / `medium` / `high`），或者只调这一次学习的讲解：`uv run examprep study zh-data-structures --reasoning low`。
+
 ExamPrep Agent 从 [Exam Cram Coach Skill](https://github.com/ZeKaiNie/universal-examprep-skill) 演进而来，是一个独立的开源学习 Agent。
 
 ## 它要做什么
