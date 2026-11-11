@@ -13,6 +13,8 @@ class Brain:
 
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self.prompts: list[tuple[str, str]] = []  # (Tutor 动作, 最后一条用户消息)
+        self.empty_next = 0  # 接下来几次 Tutor 调用返回空正文
         self.fail_grader_on: set[str] = set()
 
     def __call__(self, req: LLMRequest) -> FakeTurn | LLMError:
@@ -79,4 +81,8 @@ class Brain:
                 "线性表是有序序列 [[E1]]。这句是编造的 [[E1]]。这里引用了不存在的编号 [[E9]]。",
             )
         self.calls.append(kind)
+        self.prompts.append((kind, user))
+        if self.empty_next > 0:  # 模拟思考模式只输出推理、正文为空
+            self.empty_next -= 1
+            return FakeTurn(text="")
         return FakeTurn(text=text, chunk_size=3)

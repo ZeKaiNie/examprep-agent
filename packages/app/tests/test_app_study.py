@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import itertools
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -30,8 +31,16 @@ from examprep.study.events import (
     TutorMessage,
     Verified,
 )
-from examprep.study.session import StudyOptions, StudySession
-from examprep_llm import Gateway, LLMError, LLMRequest, ServerError
+from examprep.study.session import StudyOptions, StudySession, restore_segment
+from examprep_llm import (
+    AssistantMessage,
+    Gateway,
+    LLMError,
+    LLMRequest,
+    ServerError,
+    SystemMessage,
+    UserMessage,
+)
 from examprep_llm.testing import FakeClock, FakeProvider, FakeTurn
 from examprep_runtime.session import SQLiteEventStore
 
@@ -164,6 +173,12 @@ async def test_llm_grading_reveal_and_self_assessment(env: dict[str, Any]) -> No
         "C\n解析：1 出栈前 3 已出栈，说明 1、2 仍在栈中且 2 在 1 之上，此时不能先出 1。",
     )
     assert of(ev, TutorMessage)[0].kind == "feedback"
+    # “看答案”是指令不是答案：讲评按未作答处理，提示词里不出现“判定是：skip”
+    kind, prompt = env["brain"].prompts[-1]
+    assert kind == "feedback"
+    assert "学生没有作答" in prompt
+    assert "（未作答）" in prompt
+    assert "skip" not in prompt
 
     # Grader 失败：展示参考答案，请学生自评
     ev = await say(s, "大概三个吧")
@@ -178,6 +193,103 @@ async def test_llm_grading_reveal_and_self_assessment(env: dict[str, Any]) -> No
 
     rec = LearnerRecords(env["db"])
     assert await rec.open_mistakes(s.enr.id) == {"q001"}
+
+
+def _tutor_requests(env: dict[str, Any]) -> list[LLMRequest]:
+    fake: FakeProvider = env["gw"].providers["fake"]
+    return [r for r in fake.requests if not r.tools]
+
+
+def _last_user(request: LLMRequest) -> str:
+    last = request.messages[-1]
+    assert isinstance(last, UserMessage)
+    return last.text
+
+
+async def test_tutor_requests_are_append_only_within_a_chapter(env: dict[str, Any]) -> None:
+    """缓存前缀（R7 真实验收发现的问题）：同一章内每次 Tutor 请求都是上一次请求的前缀扩展。
+
+    上一次请求（含资料的完整用户消息）+ 模型原样输出 = 下一次请求去掉最后一条用户消息。
+    """
+    s = await open_session(env)
+    for text in [
+        "继续",
+        "顺序表要移动元素",
+        "顺序表插入为什么慢？",
+        "量子纠缠是什么？",
+        "这里没懂",
+        "继续",
+        "B",
+    ]:
+        await say(s, text)
+    chapter1 = [r for r in _tutor_requests(env) if "第 1 章" in _last_user(r)]
+    assert len(chapter1) >= 5
+    for prev, nxt in itertools.pairwise(chapter1):
+        assert nxt.messages[: len(prev.messages)] == prev.messages
+    systems = [m for m in chapter1[-1].messages if isinstance(m, SystemMessage)]
+    assert "未解决的错题" not in "".join(m.content for m in systems)  # 会变的状态不进系统消息
+    assert all("## 学习者状态" in _last_user(r) for r in chapter1)
+    # 讲过的资料不再重发：之后的轮次只列编号
+    assert "<<<MATERIAL" in _last_user(chapter1[0])
+    assert any("在前面已经给出" in _last_user(r) for r in chapter1[1:])
+    # 历史里是模型的原样输出（带 [[E1]] 标记），不是校验后的文本
+    assert any("[[E1]]" in m.text for m in s.history if isinstance(m, AssistantMessage))
+
+
+async def test_new_chapter_starts_a_new_segment_and_resume_restores_labels(env: dict[str, Any]) -> None:
+    s = await open_session(env)
+    await say(s, "继续")
+    await say(s, "跳到第2章")
+    labels = s.cmap.labels()
+    assert s.segment_chapter == 2
+    assert labels  # 第 2 章的资料重新从 E1 编号
+    assert labels[0] == "E1"
+    first = next(r for r in _tutor_requests(env) if "第 2 章" in _last_user(r))
+    assert not any(isinstance(m, AssistantMessage) for m in first.messages)  # 新段不带上一章的对话
+
+    s2 = await open_session(env)
+    assert s2.segment_chapter == 2
+    assert s2.history == s.history
+    assert [s2.cmap.resolve(lb) for lb in labels] == [s.cmap.resolve(lb) for lb in labels]
+
+
+async def test_long_segment_starts_over(env: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    import examprep.study.session as session_mod
+
+    monkeypatch.setattr(session_mod, "SEGMENT_TOKENS", 1)  # 每轮都超过上限
+    s = await open_session(env)
+    await say(s, "继续")
+    await say(s, "顺序表插入为什么慢？")
+    assert len(s.history) == 2  # 只剩本轮
+    events = await env["store"].events(s.enr.session_id)
+    assert sum(1 for e in events if e.type == "segment") >= 2
+
+
+async def test_segment_is_dropped_when_evidence_changed(env: dict[str, Any]) -> None:
+    s = await open_session(env)
+    await say(s, "继续")
+    assert s.history
+    events = await env["store"].events(s.enr.session_id)
+    s.course.index.chunks.pop(0)  # 模拟重新导入后证据 id 变了
+    chapter, history, cmap = restore_segment(events, s.course)
+    assert (chapter, history, len(cmap)) == (None, [], 0)
+
+
+async def test_empty_tutor_reply_is_retried_once(env: dict[str, Any]) -> None:
+    s = await open_session(env)
+    brain = env["brain"]
+    brain.empty_next = 1
+    ev = await say(s, "循环队列怎么判满？")
+    assert brain.calls.count("answer") == 2
+    assert of(ev, TutorMessage)[0].text.startswith("循环队列判满")
+
+    # 连续两次空回复：提示学生重说，不输出空消息、不写入对话历史
+    brain.empty_next = 2
+    history = len(s.history)
+    ev = await say(s, "循环队列怎么判空？")
+    assert of(ev, TutorMessage) == []
+    assert of(ev, Notice)[0].level == "error"
+    assert len(s.history) == history
 
 
 async def test_ask_and_refusal(env: dict[str, Any]) -> None:

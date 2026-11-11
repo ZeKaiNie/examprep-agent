@@ -96,14 +96,15 @@ async def verify(
         result.text = apply_flags(text, orphans)
         return result
     zh = language == "zh"
-    labels: list[str] = []
     lines: list[str] = []
     for k, (_i, s, ls) in enumerate(items, 1):
         lines.append(f"{k}. {strip_markers(s).strip()}  [{', '.join(ls)}]")
-        labels.extend(lb for lb in ls if lb not in labels)
-    evidence = "\n\n".join(f"[{lb}]\n{cmap.text(lb) or ''}" for lb in labels if cmap.text(lb) is not None)
-    prompt = ("## 句子\n" if zh else "## Sentences\n") + "\n".join(lines)
-    prompt += ("\n\n## 证据\n" if zh else "\n\n## Evidence\n") + guard.fence(evidence)
+    # 证据在前、句子在后，证据给编号表里的全部块（按编号顺序、每块单独围栏）：
+    # 编号表在一章内只增不改，所以几次校验的“指令 + 证据”是只追加的前缀，能命中缓存；
+    # 只给被引用的块、或整段一个围栏（围栏 id 随内容变）时，每次的前缀都不同
+    evidence = "\n\n".join(f"[{lb}]\n{guard.fence(cmap.text(lb) or '')}" for lb in cmap.labels())
+    prompt = ("## 证据\n" if zh else "## Evidence\n") + evidence
+    prompt += ("\n\n## 句子\n" if zh else "\n\n## Sentences\n") + "\n".join(lines)
     res = await run_subagent(
         llm,
         VerifyResult,

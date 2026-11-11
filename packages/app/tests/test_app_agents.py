@@ -100,6 +100,17 @@ def test_split_sentences_roundtrip() -> None:
     assert [i for i, _s, _l in cited_sentences(TEXT)] == [0, 2, 3]
 
 
+def test_split_sentences_keeps_inline_code_whole() -> None:
+    # 真实运行发现：在 `top++; data[top] = x;` 的分号处切开，引用标记落进只有反引号的“句子”，
+    # Verifier 判它不支撑，🟡 被插进代码里
+    text = "再执行 `top++; data[top] = x;`[[E1]]。为什么先判满？\n半个 ` 反引号；照常切[[E1]]。"
+    parts = split_sentences(text)
+    assert "".join(parts) == text
+    assert parts[0] == "再执行 `top++; data[top] = x;`[[E1]]。"
+    assert [s for _i, s, _l in cited_sentences(text)] == [parts[0], "半个 ` 反引号；照常切[[E1]]。"]
+    assert apply_flags(text, {0}).startswith("🟡 再执行 `top++; data[top] = x;`")
+
+
 async def test_verify_flags_unsupported_sentences() -> None:
     gw, fake = gateway(
         submit(
@@ -171,6 +182,13 @@ def test_prompts_both_languages() -> None:
     assert "One question" in prompts.check_question("en")
     assert "部分正确" in prompts.feedback("zh", "partial", hints_used=1, reference_shown=True)
     assert "hints" in prompts.feedback("en", "wrong", hints_used=2, reference_shown=False)
+    # 答对时简短讲评；直接看答案时不评价“答案”
+    assert "2–4 句话" in prompts.feedback("zh", "right", hints_used=0, reference_shown=False)
+    assert "2–4 sentences" in prompts.feedback("en", "right", hints_used=1, reference_shown=False)
+    skip = prompts.feedback("zh", "skip", hints_used=0, reference_shown=True)
+    assert "学生没有作答" in skip
+    assert "skip" not in skip
+    assert "did not answer" in prompts.feedback("en", "skip", hints_used=0, reference_shown=True)
     assert "提示 1/3" in prompts.hint("zh", 1)
     assert "Hint 3/3" in prompts.hint("en", 9)
     assert "资料里没有讲到" in prompts.answer_question("zh", "为什么？")

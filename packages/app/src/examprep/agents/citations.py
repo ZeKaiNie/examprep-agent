@@ -14,10 +14,13 @@ from dataclasses import dataclass, field
 
 from ..knowledge.evidence import EvidenceChunk
 
-_MARK = r"\[\[\s*E\d+(?:\s*[,，、;；]\s*E\d+)*\s*\]\]"
+# 编号 E3；另外识别 6 位十六进制的围栏 id（真实模型会把题目、参考答案围栏的 id 当编号写成 [[c8406b]]），
+# 它们解析不到证据，按编造编号删除，不会原样显示给学生
+_TOKEN = r"(?:E\d+|[0-9a-f]{6})"
+_MARK = rf"\[\[\s*{_TOKEN}(?:\s*[,，、;；]\s*{_TOKEN})*\s*\]\]"
 # 连续的多个标记（中间只隔空白）合并成一个引用
 _RUN = re.compile(rf"\s*{_MARK}(?:\s*{_MARK})*")
-_LABEL = re.compile(r"E\d+")
+_LABEL = re.compile(_TOKEN)
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +68,17 @@ class CitationMap:
 
     def labels(self) -> list[str]:
         return list(self._by_label)
+
+    def label_of(self, evidence_id: str) -> str | None:
+        return self._by_evidence.get(evidence_id)
+
+    def copy(self) -> CitationMap:
+        """浅拷贝：在副本上加编号不影响原表（一轮失败时丢弃副本）。"""
+        out = CitationMap()
+        out._by_label = dict(self._by_label)
+        out._by_evidence = dict(self._by_evidence)
+        out._text = dict(self._text)
+        return out
 
     def __len__(self) -> int:
         return len(self._by_label)
@@ -167,19 +181,20 @@ def has_markers(text: str) -> bool:
 
 
 def labels_in(text: str) -> list[str]:
-    """文本中出现的编号（按出现顺序去重）。"""
+    """文本中出现的 E 编号（按出现顺序去重）；误写的围栏 id 不算编号，Verifier 不核对它们。"""
     out: list[str] = []
     for m in _RUN.finditer(text):
         for label in _LABEL.findall(m.group(0)):
-            if label not in out:
+            if label.startswith("E") and label not in out:
                 out.append(label)
     return out
 
 
 # 一句 = 到句末标点为止（英文句点要求后面是空白、标记或结尾，避免切开 0.5），再带上紧跟的引用标记；
+# 行内代码 `…` 整体跳过，不在代码里的分号、句点处切开；
 # 没有句末标点的行整体算一句；换行单独成段。三种情况覆盖全部字符，拼接后与原文完全相同。
 _SENTENCE = re.compile(
-    rf"[^\n]*?(?:[。！？!?；;]|\.(?=\s|\[\[|$))(?:[ \t]*{_MARK}(?:[ \t]*{_MARK})*)?|[^\n]+|\n"
+    rf"(?:`[^`\n]*`|[^\n`])*?(?:[。！？!?；;]|\.(?=\s|\[\[|$))(?:[ \t]*{_MARK}(?:[ \t]*{_MARK})*)?|[^\n]+|\n"
 )
 
 

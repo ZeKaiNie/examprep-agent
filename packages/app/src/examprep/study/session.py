@@ -9,6 +9,7 @@ import re
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 from sqlalchemy import select
 
@@ -21,12 +22,13 @@ from examprep_llm import (
     TextBlock,
     TextDelta,
     UserMessage,
+    estimate_tokens,
 )
 from examprep_runtime import LLMClient
-from examprep_runtime.session import EventStore, load_messages, message_payload
+from examprep_runtime.session import MESSAGE_EVENT, EventStore, StoredEvent, message_payload, project_messages
 
 from ..agents import prompts
-from ..agents.citations import CitationMap, CitationStream, has_markers, render, strip_markers
+from ..agents.citations import CitationMap, CitationStream, has_markers, render
 from ..agents.grader import grade_answer_llm, judge_check
 from ..agents.verifier import Verification, verify
 from ..catalog import load_evidence
@@ -40,7 +42,7 @@ from ..pedagogy.picker import Candidate, pick_questions
 from ..pedagogy.strategy import Strategy, days_left, strategy_for
 from ..store import Database
 from ..store import models as m
-from .context import LearnerSnapshot, materials, system_messages, user_turn
+from .context import LearnerSnapshot, learner_state, materials, system_messages, user_turn
 from .events import (
     ChapterDone,
     ChapterRow,
@@ -64,10 +66,13 @@ from .events import (
     Verified,
 )
 
-HISTORY_MESSAGES = 10
+SEGMENT_TOKENS = 60_000  # 一段对话（同一章）的历史上限；超过后开新段，代价是一次缓存未命中
+SEGMENT_EVENT = "segment"  # 会话事件：开始新的一段对话 {"chapter": n}
+EVIDENCE_EVENT = "evidence"  # 会话事件：本段新编号的证据 {"ids": [...]}，恢复时按顺序重建编号表
 _STATES: tuple[State, ...] = ("TEACH", "CHECK", "PRACTICE", "SELF", "DONE")
 MAX_RETEACH = 2
 ASK_HITS = 6
+EMPTY_RETRIES = 1  # Tutor 返回空正文时的重试次数
 
 _SELF_RIGHT = re.compile(r"^\s*(?:对|对了|我对了|答对了|正确|是对的|right|correct|yes|y)\W*$", re.I)
 _SELF_WRONG = re.compile(r"^\s*(?:错|错了|我错了|答错了|不对|wrong|incorrect|no|n)\W*$", re.I)
@@ -172,6 +177,8 @@ class StudySession:
         context_window: int = 128_000,
         verify_answers: bool = True,
         timeout: float = 30.0,
+        segment_chapter: int | None = None,
+        cmap: CitationMap | None = None,
     ) -> None:
         self.db = db
         self.llm = llm
@@ -179,7 +186,10 @@ class StudySession:
         self.enr = enrollment
         self.progress = progress
         self.events = events
+        # 当前这段对话（同一章，只追加）：历史、所属章、段内共用的证据编号表
         self.history = history
+        self.segment_chapter = segment_chapter
+        self.cmap = cmap or CitationMap()
         self.records = LearnerRecords(db, tenant=enrollment.tenant_id, user=enrollment.user_id)
         self.context_window = context_window
         self.verify_answers = verify_answers
@@ -220,11 +230,13 @@ class StudySession:
         if numbers and enr.current_chapter not in numbers:
             enr.current_chapter = numbers[0]
         history: list[Message] = []
+        segment: int | None = None
+        cmap = CitationMap()
         if enr.session_id is None or await events.get_session(enr.session_id) is None:
             info = await events.create_session(metadata={"course_id": course_id, "enrollment_id": enr.id})
             enr.session_id = info.id
         else:
-            history = await load_messages(events, enr.session_id)
+            segment, history, cmap = restore_segment(await events.events(enr.session_id), course)
         await records.save_enrollment(enr)
         progress = await records.progress(enr.id, numbers)
         session = cls(
@@ -238,6 +250,8 @@ class StudySession:
             context_window=context_window,
             verify_answers=verify_answers,
             timeout=timeout,
+            segment_chapter=segment,
+            cmap=cmap,
         )
         for n, parts in session.parts.items():
             row = progress[n]
@@ -630,10 +644,11 @@ class StudySession:
         reference_src = self._ref_source(q)
         if intent.kind in ("reveal", "skip"):
             verdict = "skip"
-            await self._record(q, intent.text, verdict, "self", hints=hints)
+            # “看答案”“跳过”是指令，不是答案：作答记录和讲评里都按未作答处理
+            await self._record(q, "", verdict, "self", hints=hints)
             yield self._graded(q, verdict, None, "self", None, None, reveal=intent.kind == "reveal")
             if intent.kind == "reveal":
-                async for ev in self._feedback(q, intent.text, verdict, hints, reference_shown=True):
+                async for ev in self._feedback(q, "", verdict, hints, reference_shown=True):
                     yield ev
             self._finish_question(wrong=True)
             async for ev in self._next_question():
@@ -831,6 +846,7 @@ class StudySession:
         if not hits:
             msg = prompts.refusal(self.course.language)
             yield Refused(query=text, text=msg)
+            await self._ensure_segment()
             await self._log(
                 UserMessage(content=[TextBlock(text=text)]), AssistantMessage(content=[TextBlock(text=msg)])
             )
@@ -945,8 +961,9 @@ class StudySession:
     ) -> AsyncIterator[StudyEvent]:
         turn = out if out is not None else _Turn()
         lang = self.course.language
-        cmap = CitationMap()
-        material = materials(chunks, cmap, budget=self.evidence_budget, language=lang)
+        await self._ensure_segment()
+        cmap = self.cmap.copy()  # 本轮成功后才提交新编号
+        mats = materials(chunks, cmap, budget=self.evidence_budget, language=lang)
         row = self.progress[self.chapter]
         snap = LearnerSnapshot(
             chapter=self.chapter,
@@ -961,23 +978,38 @@ class StudySession:
             open_mistakes=len(await self.records.open_mistakes(self.enr.id)),
         )
         system = system_messages(
-            lang, self.course.name, self.course.chapters, snap, budget=self.system_budget
+            lang, self.course.name, self.course.chapters, chapter=self.chapter, budget=self.system_budget
         )
-        prompt = UserMessage(content=[TextBlock(text=user_turn(lang, student, task, material, extra))])
-        request = LLMRequest(messages=[*system, *self.history[-HISTORY_MESSAGES:], prompt])
+        user_text = user_turn(lang, student, task, mats.text, extra, state=learner_state(lang, snap))
+        prompt = UserMessage(content=[TextBlock(text=user_text)])
+        request = LLMRequest(messages=[*system, *self.history, prompt])
         stream = CitationStream(cmap)
         raw: list[str] = []
         shown: list[str] = []
-        try:
-            async for ev in self.llm.stream(request, role="tutor", cancel=self.cancel):
-                if isinstance(ev, TextDelta):
-                    raw.append(ev.text)
-                    piece = stream.feed(ev.text)
-                    if piece:
-                        shown.append(piece)
-                        yield TutorDelta(text=piece)
-        except LLMError as exc:
-            yield Notice(level="error", text=self._t(f"模型调用失败：{exc}", f"Model call failed: {exc}"))
+        # 真实模型（deepseek-flash 思考模式）偶尔只输出推理、正文为空：空回复没有向学生输出任何内容，重试一次
+        for _attempt in range(EMPTY_RETRIES + 1):
+            stream = CitationStream(cmap)
+            raw, shown = [], []
+            try:
+                async for ev in self.llm.stream(request, role="tutor", cancel=self.cancel):
+                    if isinstance(ev, TextDelta):
+                        raw.append(ev.text)
+                        piece = stream.feed(ev.text)
+                        if piece:
+                            shown.append(piece)
+                            yield TutorDelta(text=piece)
+            except LLMError as exc:
+                yield Notice(level="error", text=self._t(f"模型调用失败：{exc}", f"Model call failed: {exc}"))
+                return
+            if "".join(raw).strip():
+                break
+        else:
+            yield Notice(
+                level="error",
+                text=self._t(
+                    "模型这次没有给出内容，请再说一次。", "The model returned nothing; please try again."
+                ),
+            )
             return
         tail = stream.flush()
         if tail:
@@ -1006,17 +1038,39 @@ class StudySession:
         turn.text = render(final_raw, cmap).text
         turn.ok = True
         turn.citations = citations
-        user_msg = UserMessage(content=[TextBlock(text=student)]) if student else None
-        await self._log(user_msg, AssistantMessage(content=[TextBlock(text=strip_markers(final_raw))]))
+        # 历史里放发出去的原文和模型的原样输出（不放校验后加 🟡 的版本），下一轮请求才是这一轮的前缀扩展
+        self.cmap = cmap
+        if mats.new_ids:
+            await self._event(EVIDENCE_EVENT, {"ids": mats.new_ids})
+        await self._log(prompt, AssistantMessage(content=[TextBlock(text=raw_text)]))
+
+    # ------------------------------------------------------------ 对话分段（缓存前缀）
+
+    def _segment_limit(self) -> int:
+        return min(int(self.context_window * 0.5), SEGMENT_TOKENS)
+
+    async def _ensure_segment(self) -> None:
+        """换章或本段太长时开新段：系统消息变化或历史太长，前缀反正保不住，从头开始只追加。"""
+        if (
+            self.segment_chapter == self.chapter
+            and estimate_tokens(_history_text(self.history)) < self._segment_limit()
+        ):
+            return
+        self.segment_chapter = self.chapter
+        self.history = []
+        self.cmap = CitationMap()
+        await self._event(SEGMENT_EVENT, {"chapter": self.chapter})
+
+    async def _event(self, type: str, payload: dict[str, Any]) -> None:
+        if self.enr.session_id is not None:
+            await self.events.append(self.enr.session_id, type, payload)
 
     async def _log(self, user: UserMessage | None, assistant: AssistantMessage) -> None:
-        sid = self.enr.session_id
         for msg in (user, assistant):
             if msg is None:
                 continue
             self.history.append(msg)
-            if sid is not None:
-                await self.events.append(sid, "message", message_payload(msg))
+            await self._event(MESSAGE_EVENT, message_payload(msg))
 
     def _figures_for(self, chunks: Sequence[EvidenceChunk]) -> list[FigureRef]:
         out: list[FigureRef] = []
@@ -1028,6 +1082,36 @@ class StudySession:
 
     def _t(self, zh: str, en: str) -> str:
         return zh if self.course.language == "zh" else en
+
+
+def _history_text(history: Sequence[Message]) -> str:
+    return "\n".join(m.text for m in history if isinstance(m, (UserMessage, AssistantMessage)))
+
+
+def restore_segment(
+    events: Sequence[StoredEvent], course: CourseData
+) -> tuple[int | None, list[Message], CitationMap]:
+    """从会话事件恢复最后一段对话：最后一个 segment 事件之后的消息与证据编号。
+
+    没有 segment 事件（旧版本的会话）时返回空段，下一轮从新段开始。
+    """
+    start = max((i for i, e in enumerate(events) if e.type == SEGMENT_EVENT), default=None)
+    if start is None:
+        return None, [], CitationMap()
+    chapter = events[start].payload.get("chapter")
+    by_id = {c.id: c for c in course.index.chunks}
+    cmap = CitationMap()
+    tail = events[start + 1 :]
+    for e in tail:
+        if e.type == EVIDENCE_EVENT:
+            ids = e.payload.get("ids")
+            for eid in ids if isinstance(ids, list) else []:  # pyright: ignore[reportUnknownVariableType]
+                chunk = by_id.get(str(eid))  # pyright: ignore[reportUnknownArgumentType]
+                if chunk is None:
+                    # 资料重新导入后证据变了：历史里的编号对不上，丢弃这段，下一轮开新段
+                    return None, [], CitationMap()
+                cmap.add(chunk)
+    return (chapter if isinstance(chapter, int) else None), project_messages(tail), cmap
 
 
 async def verify_text(

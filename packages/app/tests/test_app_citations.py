@@ -6,7 +6,14 @@ import random
 
 import pytest
 
-from examprep.agents.citations import CitationMap, CitationStream, has_markers, render, strip_markers
+from examprep.agents.citations import (
+    CitationMap,
+    CitationStream,
+    has_markers,
+    labels_in,
+    render,
+    strip_markers,
+)
 from examprep.knowledge.evidence import EvidenceChunk
 
 
@@ -47,6 +54,15 @@ def test_no_markers(cmap: CitationMap) -> None:
 
 def test_strip_markers() -> None:
     assert strip_markers("栈后进先出 [[E2]]。队列[[E1]][[E3]]先进先出。") == "栈后进先出。队列先进先出。"
+
+
+def test_fence_ids_written_as_markers_are_dropped(cmap: CitationMap) -> None:
+    # 真实模型（deepseek-flash）会把参考答案围栏的 id 当编号写出来，不能原样显示给学生
+    r = render("与参考答案一致 [[c8406b]]。见资料[[E2, df7e70]]。", cmap)
+    assert r.text == "与参考答案一致。见资料（第2章_栈和队列.md p.1）。"
+    assert r.unknown == ["c8406b", "df7e70"]
+    assert labels_in("一致 [[c8406b]]。见[[E2, df7e70]]。") == ["E2"]  # 围栏 id 不交给 Verifier 核对
+    assert strip_markers("一致 [[c8406b]]。") == "一致。"
 
 
 SAMPLE = (
