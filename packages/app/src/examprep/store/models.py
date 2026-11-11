@@ -152,3 +152,82 @@ class Job(Base):
     error: Mapped[str | None] = mapped_column(Text, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+# ---------------------------------------------------------------- 学习者侧（P3a）
+
+LOCAL_USER = "me"
+
+
+class Enrollment(Base):
+    """一个用户学一门课。``session_state`` 存会话的瞬时状态（当前状态、待答题、提示级别、检查问题）。"""
+
+    __tablename__ = "enrollment"
+    __table_args__ = (UniqueConstraint("tenant_id", "user_id", "course_id"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), default=LOCAL_TENANT, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), default=LOCAL_USER)
+    course_id: Mapped[str] = mapped_column(ForeignKey("course.id", ondelete="CASCADE"), index=True)
+    mode: Mapped[str] = mapped_column(String(16), default="cram")  # cram / longterm
+    start_level: Mapped[str] = mapped_column(String(16), default="zero")  # zero / weak / gap
+    exam_date: Mapped[str | None] = mapped_column(String(10), default=None)  # YYYY-MM-DD
+    profile: Mapped[str | None] = mapped_column(
+        String(16), default=None
+    )  # small / standard / large；None 自动
+    current_chapter: Mapped[int] = mapped_column(Integer, default=1)
+    session_id: Mapped[str | None] = mapped_column(String(32), default=None)  # 事件存储里的会话
+    session_state: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class ChapterProgress(Base):
+    __tablename__ = "chapter_progress"
+    __table_args__ = (UniqueConstraint("enrollment_id", "chapter_n"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), default=LOCAL_TENANT)
+    enrollment_id: Mapped[str] = mapped_column(ForeignKey("enrollment.id", ondelete="CASCADE"), index=True)
+    chapter_n: Mapped[int] = mapped_column(Integer)
+    parts_done: Mapped[int] = mapped_column(Integer, default=0)
+    parts_total: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="todo")  # todo / teaching / covered / verified
+    check_failures: Mapped[int] = mapped_column(Integer, default=0)  # 当前段检查题连续答错次数
+    practiced: Mapped[int] = mapped_column(Integer, default=0)  # 本章已练题数
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class Attempt(Base):
+    """作答记录，只追加。"""
+
+    __tablename__ = "attempt"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), default=LOCAL_TENANT)
+    user_id: Mapped[str] = mapped_column(String(64), default=LOCAL_USER)
+    enrollment_id: Mapped[str] = mapped_column(ForeignKey("enrollment.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(16), default="question")  # question / check
+    qid: Mapped[str | None] = mapped_column(String(16), default=None)
+    chapter_n: Mapped[int | None] = mapped_column(default=None)
+    answer: Mapped[str] = mapped_column(Text, default="")
+    verdict: Mapped[str] = mapped_column(String(16))  # right / partial / wrong / unsure / skip
+    score: Mapped[float | None] = mapped_column(default=None)
+    grader: Mapped[str] = mapped_column(String(16), default="rule")  # rule / llm / self
+    error_type: Mapped[str | None] = mapped_column(String(32), default=None)
+    reason: Mapped[str | None] = mapped_column(Text, default=None)
+    hints_used: Mapped[int] = mapped_column(Integer, default=0)
+    has_reference: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class Note(Base):
+    __tablename__ = "note"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[str] = mapped_column(String(64), default=LOCAL_TENANT)
+    enrollment_id: Mapped[str] = mapped_column(ForeignKey("enrollment.id", ondelete="CASCADE"), index=True)
+    chapter_n: Mapped[int | None] = mapped_column(default=None)
+    type: Mapped[str] = mapped_column(String(16))  # summary / confusion / note
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
