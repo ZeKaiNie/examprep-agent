@@ -5,7 +5,7 @@
 协议选项（``ProviderConfig.options``）：
 - ``max_tokens_field``：``max_tokens``（默认）或 ``max_completion_tokens``（openai 默认）
 - ``stream_usage``：是否发送 ``stream_options.include_usage``，默认 True
-- ``send_reasoning``：回传历史推理内容（``reasoning_content``），默认 False
+- ``send_reasoning``：回传同一 provider 产生的历史推理内容（``reasoning_content``），默认 False（deepseek 预设为 True）
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def _user_content(msg: UserMessage) -> str | list[dict[str, Any]]:
     return parts
 
 
-def _assistant(msg: AssistantMessage, *, send_reasoning: bool) -> dict[str, Any] | None:
+def _assistant(msg: AssistantMessage, *, reasoning_from: str | None) -> dict[str, Any] | None:
     text = msg.text
     calls = msg.tool_calls
     out: dict[str, Any] = {"role": "assistant", "content": text or None}
@@ -66,7 +66,7 @@ def _assistant(msg: AssistantMessage, *, send_reasoning: bool) -> dict[str, Any]
             }
             for c in calls
         ]
-    if send_reasoning and msg.protocol == "openai":
+    if reasoning_from is not None and msg.protocol == "openai" and msg.provider == reasoning_from:
         reasoning = "".join(b.text for b in msg.content if isinstance(b, ThinkingBlock) and not b.redacted)
         if reasoning:
             out["reasoning_content"] = reasoning
@@ -75,7 +75,8 @@ def _assistant(msg: AssistantMessage, *, send_reasoning: bool) -> dict[str, Any]
     return out
 
 
-def convert_messages(request: LLMRequest, *, send_reasoning: bool = False) -> list[dict[str, Any]]:
+def convert_messages(request: LLMRequest, *, reasoning_from: str | None = None) -> list[dict[str, Any]]:
+    """``reasoning_from``：回传该 provider 产生的推理内容；None 表示不回传。"""
     out: list[dict[str, Any]] = [
         {"role": "system", "content": m.content} for m in request.messages if isinstance(m, SystemMessage)
     ]
@@ -83,7 +84,7 @@ def convert_messages(request: LLMRequest, *, send_reasoning: bool = False) -> li
         if isinstance(m, UserMessage):
             out.append({"role": "user", "content": _user_content(m)})
         elif isinstance(m, AssistantMessage):
-            item = _assistant(m, send_reasoning=send_reasoning)
+            item = _assistant(m, reasoning_from=reasoning_from)
             if item is not None:
                 out.append(item)
         else:
@@ -121,7 +122,9 @@ class OpenAICompatProvider(HTTPProvider):
         opts = self.config.options
         body: dict[str, Any] = {
             "model": model.id,
-            "messages": convert_messages(request, send_reasoning=bool(opts.get("send_reasoning", False))),
+            "messages": convert_messages(
+                request, reasoning_from=self.name if opts.get("send_reasoning", False) else None
+            ),
             "stream": True,
         }
         if opts.get("stream_usage", True):

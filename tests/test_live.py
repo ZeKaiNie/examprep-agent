@@ -1,7 +1,7 @@
 """在线测试：真实模型跑同一段工具调用脚本。默认跳过，用 ``uv run pytest -m live tests/test_live.py`` 运行。
 
 需要的环境变量（缺失则跳过对应用例）：
-- DEEPSEEK_API_KEY      → deepseek/deepseek-chat（OpenAI 兼容协议）
+- DEEPSEEK_API_KEY      → deepseek/deepseek-flash（OpenAI 兼容协议；KAOPU_DEEPSEEK_MODEL 可改模型）
 - ANTHROPIC_API_KEY     → anthropic/claude-haiku-4-5
 - GEMINI_API_KEY        → gemini/gemini-2.5-flash
 - KAOPU_OLLAMA_MODEL    → ollama/<模型名>（需要本地 Ollama 在 11434 端口运行，模型需支持工具调用，如 qwen3:8b）
@@ -44,7 +44,7 @@ def _ollama_up() -> bool:
 def _cases() -> list[object]:
     out: list[object] = []
     for provider, key_env, model in [
-        ("deepseek", "DEEPSEEK_API_KEY", "deepseek-chat"),
+        ("deepseek", "DEEPSEEK_API_KEY", os.environ.get("KAOPU_DEEPSEEK_MODEL", "deepseek-flash")),
         ("anthropic", "ANTHROPIC_API_KEY", "claude-haiku-4-5"),
         ("gemini", "GEMINI_API_KEY", "gemini-2.5-flash"),
     ]:
@@ -71,13 +71,16 @@ async def test_live_tool_call(provider: str, ref: str) -> None:
         tools=[get_weather],
         budget=Budget(max_turns=4),
     )
-    events = [ev async for ev in agent.run("北京今天天气怎么样？")]
+    # 两个用户回合：第二回合的请求带着第一回合的工具调用历史（DeepSeek 思考模式要求回传推理内容）
+    for question, city in [("北京今天天气怎么样？", "北京"), ("那上海呢？", "上海")]:
+        events = [ev async for ev in agent.run(question)]
+        end = events[-1]
+        assert end.type == "agent_end"
+        assert end.reason == "completed", getattr(end, "error", None)
+        assert city in calls, f"模型没有为 {city} 调用工具：{calls}"
+        final = agent.messages[-1]
+        assert isinstance(final, AssistantMessage)
+        assert "25" in final.text
     await gateway.aclose()
-    end = events[-1]
-    assert end.type == "agent_end"
-    assert end.reason == "completed", getattr(end, "error", None)
-    assert calls, "模型没有调用工具"
-    assert any(isinstance(m, ToolResultMessage) for m in agent.messages)
-    final = agent.messages[-1]
-    assert isinstance(final, AssistantMessage)
-    assert "25" in final.text
+    assert sum(isinstance(m, ToolResultMessage) for m in agent.messages) >= 2
+    assert gateway.ledger.errors == 0

@@ -115,19 +115,19 @@ def test_map_stream_error(err: dict[str, str], expected: type[Exception]) -> Non
 
 def test_registry_lookup_order() -> None:
     reg = ModelRegistry()
-    builtin = reg.get("deepseek", "deepseek-chat", "openai")
+    builtin = reg.get("deepseek", "deepseek-flash", "openai")
     assert builtin.supports_prompt_cache
     assert builtin.pricing is not None
     unknown = reg.get("deepseek", "new-model", "openai")
     assert (unknown.context_window, unknown.max_output, unknown.pricing) == (8192, 2048, None)
     local = reg.get("ollama", "qwen3:8b", "openai")
     assert local.pricing == FREE
-    override = ModelInfo(id="deepseek-chat", provider="deepseek", protocol="openai", context_window=64000)
+    override = ModelInfo(id="deepseek-flash", provider="deepseek", protocol="openai", context_window=64000)
     reg.register(override)
-    assert reg.get("deepseek", "deepseek-chat", "openai").context_window == 64000
+    assert reg.get("deepseek", "deepseek-flash", "openai").context_window == 64000
     assert override in reg.known()
     assert ModelRegistry(include_builtin=False).known() == []
-    assert override.ref == "deepseek/deepseek-chat"
+    assert override.ref == "deepseek/deepseek-flash"
 
 
 def test_compute_cost() -> None:

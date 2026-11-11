@@ -36,15 +36,20 @@ class ProviderConfig(BaseModel):
         return None
 
 
-def _p(name: str, protocol: ProtocolName, base_url: str, key_env: str | None) -> ProviderConfig:
-    return ProviderConfig(name=name, protocol=protocol, base_url=base_url, api_key_env=key_env)
+def _p(
+    name: str, protocol: ProtocolName, base_url: str, key_env: str | None, **options: Any
+) -> ProviderConfig:
+    return ProviderConfig(
+        name=name, protocol=protocol, base_url=base_url, api_key_env=key_env, options=options
+    )
 
 
 PROVIDER_PRESETS: dict[str, ProviderConfig] = {
     p.name: p
     for p in (
         _p("openai", "openai", "https://api.openai.com/v1", "OPENAI_API_KEY"),
-        _p("deepseek", "openai", "https://api.deepseek.com/v1", "DEEPSEEK_API_KEY"),
+        # DeepSeek 思考模式默认开启；请求带 tools 时必须回传历史 reasoning_content，否则可能返回 400
+        _p("deepseek", "openai", "https://api.deepseek.com/v1", "DEEPSEEK_API_KEY", send_reasoning=True),
         _p("qwen", "openai", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
         _p("glm", "openai", "https://open.bigmodel.cn/api/paas/v4", "ZHIPUAI_API_KEY"),
         _p("kimi", "openai", "https://api.moonshot.cn/v1", "MOONSHOT_API_KEY"),
@@ -66,6 +71,9 @@ def provider_config(name: str, **overrides: Any) -> ProviderConfig:
     data: dict[str, Any] = base.model_dump() if base is not None else {"name": name}
     if base is not None and base.api_key is not None:
         data["api_key"] = base.api_key
+    extra_options = overrides.pop("options", None)
     data.update({k: v for k, v in overrides.items() if v is not None})
+    if extra_options:  # 协议选项与预设合并，而不是整体替换
+        data["options"] = {**data.get("options", {}), **extra_options}
     data["name"] = name
     return ProviderConfig.model_validate(data)

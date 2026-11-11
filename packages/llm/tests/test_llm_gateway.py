@@ -451,7 +451,7 @@ def test_from_config_merges_presets() -> None:
                 "myvllm": {"protocol": "openai", "base_url": "http://gpu:8000/v1"},
             },
             "models": [{"id": "qwen", "provider": "myvllm", "protocol": "openai", "context_window": 32768}],
-            "roles": {"tutor": ["deepseek/deepseek-chat", "myvllm/qwen"]},
+            "roles": {"tutor": ["deepseek/deepseek-flash", "myvllm/qwen"]},
             "retry": {"max_attempts": 2},
         }
     )
@@ -463,4 +463,4 @@ def test_from_config_merges_presets() -> None:
     assert g.providers["myvllm"].config.base_url == "http://gpu:8000/v1"
     assert g.model_info("myvllm/qwen").context_window == 32768
     assert g.retry.max_attempts == 2
-    assert g.chain(role="tutor") == ["deepseek/deepseek-chat", "myvllm/qwen"]
+    assert g.chain(role="tutor") == ["deepseek/deepseek-flash", "myvllm/qwen"]

@@ -47,7 +47,7 @@ def req(*msgs: Any, **kw: Any) -> LLMRequest:
     return LLMRequest(messages=list(msgs) or [UserMessage(content="北京天气？")], **kw)  # type: ignore[arg-type]
 
 
-async def collect(p: OpenAICompatProvider, r: LLMRequest, model: str = "deepseek-chat") -> list[Any]:
+async def collect(p: OpenAICompatProvider, r: LLMRequest, model: str = "deepseek-flash") -> list[Any]:
     info = REG.get(p.name, model, "openai")
     return [ev async for ev in p.stream(r, info)]
 
@@ -72,7 +72,7 @@ async def test_tool_call_stream(replay: Any) -> None:
         ToolCallBlock(id="call_0_weather", name="get_weather", arguments={"city": "北京"})
     ]
     assert (msg.usage.input_tokens, msg.usage.cache_read_tokens, msg.usage.output_tokens) == (36, 64, 20)
-    assert (msg.provider, msg.model, msg.protocol) == ("deepseek", "deepseek-chat", "openai")
+    assert (msg.provider, msg.model, msg.protocol) == ("deepseek", "deepseek-flash", "openai")
 
     request = rec.requests[0]
     assert str(request.url) == "https://api.deepseek.com/v1/chat/completions"
@@ -90,6 +90,26 @@ async def test_tool_call_stream(replay: Any) -> None:
     await p.aclose()
 
 
+async def test_real_deepseek_flash_recording(replay: Any) -> None:
+    """2026-11 录制的 deepseek-flash 真实流：思考模式 + 工具调用 + 缓存用量。"""
+    rec = replay("deepseek_flash_tool_call.sse", chunk_size=13)
+    events = await collect(make(rec), req(tools=[WEATHER]), model="deepseek-flash")
+    msg = events[-1].message
+    assert msg.stop_reason == "tool_use"
+    assert msg.thinking  # reasoning_content 被识别为推理
+    assert msg.tool_calls[0].name == "get_weather"
+    assert msg.tool_calls[0].arguments == {"city": "北京"}
+    assert msg.tool_calls[0].id.startswith("call_")
+    assert msg.usage.output_tokens > 0
+    assert msg.usage.reasoning_tokens > 0
+
+    rec = replay("deepseek_flash_text.sse", chunk_size=13)
+    msg = (await collect(make(rec), req(), model="deepseek-flash"))[-1].message
+    assert msg.stop_reason == "stop"
+    assert "北京" in msg.text
+    assert msg.usage.cache_read_tokens > 0
+
+
 async def test_text_stream_with_random_chunks(replay: Any) -> None:
     for size in (1, 3, 17):
         rec = replay("openai_text.sse", chunk_size=size)
@@ -103,7 +123,7 @@ async def test_text_stream_with_random_chunks(replay: Any) -> None:
 
 async def test_reasoning_content(replay: Any) -> None:
     rec = replay("openai_reasoning.sse")
-    events = await collect(make(rec), req(reasoning="high"), model="deepseek-reasoner")
+    events = await collect(make(rec), req(reasoning="high"), model="deepseek-flash")
     msg = events[-1].message
     assert msg.thinking == "用户问 1+1，答案是 2。"
     assert msg.text == "等于 2。"
@@ -218,7 +238,7 @@ def test_convert_full_conversation() -> None:
         temperature=0.2,
         extra={"top_p": 0.9},
     )
-    body = p.build_body(r, REG.get("deepseek", "deepseek-chat", "openai"))
+    body = p.build_body(r, REG.get("deepseek", "deepseek-flash", "openai"))
     assert body["messages"] == [
         {"role": "system", "content": "你是助教"},
         {
@@ -247,19 +267,32 @@ def test_convert_full_conversation() -> None:
 
 
 def test_send_reasoning_and_disable_stream_usage() -> None:
-    cfg = provider_config(
-        "deepseek", options={"send_reasoning": True, "stream_usage": False, "max_tokens_field": "max_tokens"}
-    )
+    # 覆盖的选项与预设合并：deepseek 预设的 send_reasoning=True 保留
+    cfg = provider_config("deepseek", options={"stream_usage": False, "max_tokens_field": "max_tokens"})
+    assert cfg.options["send_reasoning"] is True
     p = OpenAICompatProvider(cfg)
     r = req(
         UserMessage(content="q"),  # type: ignore[arg-type]
-        AssistantMessage(content=[ThinkingBlock(text="推理"), TextBlock(text="答")], protocol="openai"),
+        AssistantMessage(
+            content=[ThinkingBlock(text="推理"), TextBlock(text="答")], provider="deepseek", protocol="openai"
+        ),
+        AssistantMessage(
+            content=[ThinkingBlock(text="别家推理"), TextBlock(text="答2")],
+            provider="qwen",
+            protocol="openai",
+        ),
         max_tokens=50,
     )
-    body = p.build_body(r, REG.get("deepseek", "deepseek-reasoner", "openai"))
+    body = p.build_body(r, REG.get("deepseek", "deepseek-flash", "openai"))
     assert body["messages"][1]["reasoning_content"] == "推理"
+    assert "reasoning_content" not in body["messages"][2]  # 只回传同一 provider 的推理
     assert "stream_options" not in body
     assert body["max_tokens"] == 50
+    # 其他 provider 默认不回传
+    other = OpenAICompatProvider(provider_config("qwen")).build_body(
+        r, REG.get("qwen", "qwen-plus", "openai")
+    )
+    assert all("reasoning_content" not in m for m in other["messages"])
 
 
 async def test_http_errors(replay: Any) -> None:

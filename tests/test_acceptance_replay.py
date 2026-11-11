@@ -32,7 +32,7 @@ async def get_weather(params: CityArgs, ctx: ToolContext) -> str:
 
 
 CASES = {
-    "openai": ("deepseek", "deepseek/deepseek-chat"),
+    "openai": ("deepseek", "deepseek/deepseek-flash"),
     "anthropic": ("anthropic", "anthropic/claude-sonnet-4-5"),
     "gemini": ("gemini", "gemini/gemini-2.5-flash"),
 }

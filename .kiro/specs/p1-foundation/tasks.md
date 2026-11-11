@@ -38,6 +38,6 @@
 ## 4. 验收
 
 - [x] 4.1 `tests/test_acceptance_replay.py`：三种协议跑通同一工具调用脚本
-- [ ] 4.2 `tests/test_live.py`：在线测试（有 Key / Ollama 时运行，否则如实标注未验证）——用例已写好；本机无 API Key、无 Ollama，4 个用例全部跳过，**未验证**
+- [x] 4.2 `tests/test_live.py`：在线测试——2026-11-11 用 DeepSeek `deepseek-flash`（V4.1-Flash）通过（两个用户回合、工具调用、思考模式推理内容回传）；Anthropic、Gemini、Ollama 无 Key / 无服务，**未验证**
 - [x] 4.3 覆盖率 ≥ 85%；ruff、pyright 零错误；Python 3.11 与 3.12 本地都跑通
 - [x] 4.4 更新 `project-memory.md`

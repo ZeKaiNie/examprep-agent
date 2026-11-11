@@ -243,7 +243,7 @@ class BreakerPolicy(BaseModel):  failure_threshold: int = 5; cooldown: float = 3
 class GatewayConfig(BaseModel):
     providers: dict[str, ProviderConfig]          # 可只写名字和 key，缺省字段从预设补齐
     models: list[ModelInfo] = []                  # 能力表覆盖
-    roles: dict[str, list[str]]                   # 角色 -> 降级链，如 {"tutor": ["deepseek/deepseek-chat", "ollama/qwen3:8b"]}
+    roles: dict[str, list[str]]                   # 角色 -> 降级链，如 {"tutor": ["deepseek/deepseek-flash", "ollama/qwen3:8b"]}
     retry: RetryPolicy; breaker: BreakerPolicy
 
 class Gateway:
@@ -310,6 +310,9 @@ class FakeProvider:                      # 实现 Provider 协议，protocol = "
 - 额度不足（402、`insufficient_quota`）映射为 `QuotaExceededError`（`AuthenticationError` 子类）：不重试，但降级到下一个模型。
 - `truncate_to_tokens` 接受自定义 `counter`，上下文组装用同一个计数函数截断与统计。
 - 工具参数 schema 去掉顶层 `title` 与 `description`（参数模型的 docstring 不发给模型）。
+- DeepSeek 思考模式默认开启，官方文档要求请求带 `tools` 时回传历史 `reasoning_content`。deepseek 预设打开 `send_reasoning`；只回传**同一 provider** 产生的推理内容，降级链上别家模型的推理不回传。`provider_config()` 的 `options` 与预设合并而不是替换。
+- 能力表：`deepseek-chat` / `deepseek-reasoner` 已于 2026-07 下线，改为 `deepseek-flash`（V4.1-Flash）与 `deepseek-v4-pro`，价格按官方高峰价。
+- 回放夹具 `deepseek_flash_*.sse` 是 2026-11-11 录制的真实流（不含密钥）。
 
 ## 3. kaopu_agent（L2）
 

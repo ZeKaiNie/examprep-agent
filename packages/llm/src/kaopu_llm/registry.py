@@ -14,7 +14,8 @@ from .types import Usage
 
 ProtocolName = Literal["openai", "anthropic", "gemini", "fake"]
 
-PRICING_AS_OF = "2025-10"
+# DeepSeek 条目于 2026-11 按官方文档核对；其他厂商仍是较早记录的参考价，使用前请自行核对
+PRICING_AS_OF = "2026-11"
 LOCAL_PROVIDERS = frozenset({"ollama", "lmstudio", "vllm", "llamacpp"})
 
 
@@ -170,17 +171,27 @@ BUILTIN_MODELS: tuple[ModelInfo, ...] = (
         cache=True,
         pricing=_usd(0.25, 2.0, 0.025),
     ),
-    # DeepSeek
-    _m("deepseek", "openai", "deepseek-chat", 128_000, 8_192, cache=True, pricing=_usd(0.28, 0.42, 0.028)),
+    # DeepSeek（2026-11 官方文档；按高峰价记，非高峰为半价。deepseek-chat / deepseek-reasoner 已于 2026-07 下线）
     _m(
         "deepseek",
         "openai",
-        "deepseek-reasoner",
-        128_000,
-        64_000,
+        "deepseek-flash",  # DeepSeek-V4.1-Flash
+        1_048_576,
+        393_216,
+        vision=True,
         reasoning=True,
         cache=True,
-        pricing=_usd(0.28, 0.42, 0.028),
+        pricing=_usd(0.3, 1.2, 0.006),
+    ),
+    _m(
+        "deepseek",
+        "openai",
+        "deepseek-v4-pro",
+        1_048_576,
+        393_216,
+        reasoning=True,
+        cache=True,
+        pricing=_usd(1.32, 3.96, 0.044),
     ),
     # 通义千问（DashScope 兼容模式）
     _m("qwen", "openai", "qwen-plus", 131_072, 8_192, reasoning=True, pricing=_cny(0.8, 2.0)),
