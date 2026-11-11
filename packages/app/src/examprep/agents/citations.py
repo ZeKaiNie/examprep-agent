@@ -40,6 +40,7 @@ class CitationMap:
     def __init__(self, chunks: Iterable[EvidenceChunk] = ()) -> None:
         self._by_label: dict[str, Citation] = {}
         self._by_evidence: dict[str, str] = {}
+        self._text: dict[str, str] = {}
         for c in chunks:
             self.add(c)
 
@@ -52,10 +53,18 @@ class CitationMap:
             label, chunk.id, chunk.rel, chunk.page, chunk.char_start, chunk.char_end
         )
         self._by_evidence[chunk.id] = label
+        self._text[label] = chunk.text
         return label
 
     def resolve(self, label: str) -> Citation | None:
         return self._by_label.get(label)
+
+    def text(self, label: str) -> str | None:
+        """编号对应的证据原文（Verifier 用）。"""
+        return self._text.get(label)
+
+    def labels(self) -> list[str]:
+        return list(self._by_label)
 
     def __len__(self) -> int:
         return len(self._by_label)
@@ -155,3 +164,25 @@ def strip_markers(text: str) -> str:
 
 def has_markers(text: str) -> bool:
     return bool(_RUN.search(text))
+
+
+def labels_in(text: str) -> list[str]:
+    """文本中出现的编号（按出现顺序去重）。"""
+    out: list[str] = []
+    for m in _RUN.finditer(text):
+        for label in _LABEL.findall(m.group(0)):
+            if label not in out:
+                out.append(label)
+    return out
+
+
+# 一句 = 到句末标点为止（英文句点要求后面是空白、标记或结尾，避免切开 0.5），再带上紧跟的引用标记；
+# 没有句末标点的行整体算一句；换行单独成段。三种情况覆盖全部字符，拼接后与原文完全相同。
+_SENTENCE = re.compile(
+    rf"[^\n]*?(?:[。！？!?；;]|\.(?=\s|\[\[|$))(?:[ \t]*{_MARK}(?:[ \t]*{_MARK})*)?|[^\n]+|\n"
+)
+
+
+def split_sentences(text: str) -> list[str]:
+    """按句切分，拼接后与原文完全相同；句末标点后紧跟的引用标记归到这一句。"""
+    return _SENTENCE.findall(text)
