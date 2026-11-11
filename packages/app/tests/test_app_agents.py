@@ -138,6 +138,21 @@ async def test_verify_missing_verdict_counts_partial() -> None:
     assert (v.supported, v.partial, v.unsupported) == (1, 2, 0)
 
 
+async def test_verify_orphan_citations_without_model_call() -> None:
+    gw, fake = gateway()
+    v = await verify(gw, "编造的引用[[E7]]。另一句[[E8, E9]]。", cmap(), language="zh")
+    assert (v.total, v.unsupported, v.flagged) == (2, 2, [0, 1])
+    assert v.text == "🟡 编造的引用[[E7]]。🟡 另一句[[E8, E9]]。"
+    assert fake.requests == []
+
+
+async def test_verify_mixes_orphans_and_model_verdicts() -> None:
+    gw, _ = gateway(submit({"sentences": [{"index": 1, "verdict": "supported"}]}))
+    v = await verify(gw, "栈后进先出[[E1]]。编造[[E9]]。", cmap(), language="zh")
+    assert (v.total, v.supported, v.unsupported) == (2, 1, 1)
+    assert v.text == "栈后进先出[[E1]]。🟡 编造[[E9]]。"
+
+
 def test_apply_flags_keeps_leading_space() -> None:
     assert apply_flags("A.[[E1]] B.[[E2]]", {1}) == "A.[[E1]] 🟡 B.[[E2]]"
 

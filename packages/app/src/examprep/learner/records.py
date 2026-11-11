@@ -13,7 +13,7 @@ from ..store import models as m
 from ..store.db import utcnow
 
 RIGHT = "right"
-OPEN_VERDICTS = ("wrong", "partial")
+OPEN_VERDICTS = ("wrong", "partial", "skip")  # 看了答案或跳过的题也要回炉（与 Skill 一致）
 
 
 @dataclass(slots=True)

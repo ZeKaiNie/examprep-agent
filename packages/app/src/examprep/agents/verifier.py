@@ -77,9 +77,23 @@ async def verify(
     timeout: float | None = 30.0,
     cancel: CancelToken | None = None,
 ) -> Verification:
-    items = cited_sentences(text)
-    result = Verification(total=len(items), text=text)
+    all_items = cited_sentences(text)
+    result = Verification(total=len(all_items), text=text)
+    if not all_items:
+        return result
+    # 只引用了不存在编号的句子：没有任何证据，直接判为不支撑，不必问模型
+    items: list[tuple[int, str, list[str]]] = []
+    orphans: set[int] = set()
+    for i, s, ls in all_items:
+        known = [lb for lb in ls if cmap.resolve(lb) is not None]
+        if known:
+            items.append((i, s, known))
+        else:
+            orphans.add(i)
     if not items:
+        result.unsupported = len(orphans)
+        result.flagged = sorted(orphans)
+        result.text = apply_flags(text, orphans)
         return result
     zh = language == "zh"
     labels: list[str] = []
@@ -104,7 +118,8 @@ async def verify(
         result.error = res.error
         return result
     verdicts = {v.index: v.verdict for v in res.value.sentences}
-    flagged: set[int] = set()
+    flagged: set[int] = set(orphans)
+    result.unsupported = len(orphans)
     for k, (i, _s, _ls) in enumerate(items, 1):
         v = verdicts.get(k, "partial")  # 漏判的句子按 partial 计，不标 🟡
         if v == "supported":

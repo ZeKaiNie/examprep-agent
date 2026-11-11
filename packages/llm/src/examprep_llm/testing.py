@@ -50,12 +50,15 @@ class FakeProvider:
         *,
         name: str = "fake",
         default: FakeTurn | None = None,
+        responder: Callable[[LLMRequest], FakeTurn | LLMError] | None = None,
         config: ProviderConfig | None = None,
     ) -> None:
         self.name = name
         self.config = config or ProviderConfig(name=name, protocol="fake")
         self.script: deque[ScriptItem] = deque(script)
         self.default = default
+        # 脚本用完后按请求内容动态回复（多 Agent 场景：同一个假模型同时扮演 Tutor、Grader、Verifier）
+        self.responder = responder
         self.requests: list[LLMRequest] = []
         self.active_streams = 0
         self.max_active_streams = 0
@@ -68,6 +71,8 @@ class FakeProvider:
     def _next(self, request: LLMRequest) -> FakeTurn | LLMError:
         if self.script:
             item = self.script.popleft()
+        elif self.responder is not None:
+            return self.responder(request)
         elif self.default is not None:
             item = self.default
         else:

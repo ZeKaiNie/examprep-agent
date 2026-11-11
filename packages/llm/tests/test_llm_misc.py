@@ -273,6 +273,11 @@ async def test_fake_provider_features() -> None:
     fake.push(FakeTurn(text="later"))
     assert [e async for e in fake.stream(req, model)][-1].message.text == "later"
     assert len(fake.requests) == 5
+    fake.responder = lambda r: FakeTurn(text=f"动态 {len(r.messages)}")
+    assert [e async for e in fake.stream(req, model)][-1].message.text == "动态 1"
+    fake.responder = lambda r: ServerError("down")
+    with pytest.raises(ServerError):
+        _ = [e async for e in fake.stream(req, model)]
 
 
 async def test_fake_clock() -> None:
