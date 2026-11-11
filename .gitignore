@@ -28,6 +28,9 @@ htmlcov/
 .env.*
 !.env.example
 
+# Agent 临时脚本（放在工作区内，避免操作工作区外路径触发确认）
+.tmp/
+
 # Kiro 本机记忆（含本机路径与个人偏好，不公开）
 .kiro/steering/
 
