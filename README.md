@@ -7,7 +7,17 @@
 [![CI](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**状态：P1 地基已完成（模型层与 Agent 运行时），学习功能尚在开发，暂不可用。**
+**状态：P1 地基（模型层与 Agent 运行时）与 P2 资料引擎已完成；讲解、出题、判分的学习闭环（P3）开发中。**
+
+现在已经可以把一门课的资料导入并检索：
+
+```bash
+uv sync
+uv run examprep ingest samples/zh-data-structures      # 章节、题目（含答案配对）、配图、证据块
+uv run examprep search zh-data-structures 循环队列 判满
+uv run python samples/fetch.py mit-6006                # 下载 MIT 6.006 公开课样例
+uv run examprep ingest samples/mit-6006
+```
 
 ExamPrep Agent 从 [Exam Cram Coach Skill](https://github.com/ZeKaiNie/universal-examprep-skill) 演进而来，是一个独立的开源学习 Agent。
 
@@ -25,6 +35,8 @@ ExamPrep Agent 从 [Exam Cram Coach Skill](https://github.com/ZeKaiNie/universal
 |---|---|
 | `packages/llm` | `examprep-llm`：多厂商统一模型接口、能力表、网关（重试、限流、熔断、降级、取消） |
 | `packages/runtime` | `examprep-runtime`：通用 Agent 运行时（循环、工具、事件溯源会话、lane、子 Agent、上下文组装） |
+| `packages/app` | `examprep`：学习应用。目前包含资料引擎（PDF/DOCX/PPTX/文本解析、章节、题目、配图、注入检测、增量导入）和命令行 |
+| `samples` | 示例课程与公开课下载脚本 |
 | `docs/design` | 设计文档 |
 | `.kiro/specs` | 各阶段的需求、设计、任务清单 |
 
