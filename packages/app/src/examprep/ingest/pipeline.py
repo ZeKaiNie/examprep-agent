@@ -52,6 +52,18 @@ def sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
+HEAVY_EXT = (".pdf", ".pptx", ".docx")
+AUTO_POOL_MIN_FILES = 4
+
+
+def auto_workers(rels: list[str]) -> int:
+    """待解析的 PDF/Office 文件不少于 4 个时才开进程池（Windows 上起子进程约需 1 秒）。"""
+    heavy = sum(1 for r in rels if r.lower().endswith(HEAVY_EXT))
+    if heavy < AUTO_POOL_MIN_FILES:
+        return 0
+    return max(1, min(4, os.cpu_count() or 1, heavy))
+
+
 def scan_directory(root: str) -> tuple[str, list[str], dict[str, str]]:
     """返回 (绝对路径, 自然排序的相对路径, {相对路径: sha256})。"""
     root_abs = os.path.abspath(root)
@@ -79,13 +91,13 @@ class Ingestor:
         db: dbmod.Database,
         data_dir: str | Path,
         *,
-        workers: int = 0,
+        workers: int | None = 0,
         tenant: str = m.LOCAL_TENANT,
         now: Now = dbmod.utcnow,
     ) -> None:
         self.db = db
         self.data_dir = Path(data_dir)
-        self.workers = workers
+        self.workers = workers  # 0：当前进程顺序解析；None：按待解析文件自动决定
         self.tenant = tenant
         self.now = now
 
@@ -259,12 +271,13 @@ class Ingestor:
     ) -> AsyncIterator[tuple[ParseRequest, str, ParsedFile]]:
         if not requests:
             return
-        if self.workers <= 0:
+        workers = self.workers if self.workers is not None else auto_workers([r.rel for r, _ in requests])
+        if workers <= 0:
             for req, sha in requests:
                 yield req, sha, await asyncio.to_thread(parse_file, req)
             return
         loop = asyncio.get_running_loop()
-        with ProcessPoolExecutor(max_workers=self.workers) as pool:
+        with ProcessPoolExecutor(max_workers=workers) as pool:
 
             async def one(req: ParseRequest, sha: str) -> tuple[ParseRequest, str, ParsedFile]:
                 return req, sha, await loop.run_in_executor(pool, parse_file, req)
@@ -593,7 +606,7 @@ async def ingest(
     *,
     name: str | None = None,
     lang: str | None = None,
-    workers: int = 0,
+    workers: int | None = 0,
     on_event: Callable[[IngestEvent], None] | None = None,
 ) -> IngestReport:
     """跑完一次导入并返回报告；``on_event`` 接收全部进度事件。"""

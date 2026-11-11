@@ -150,6 +150,12 @@ async def test_mit_with_process_pool(db: Database, tmp_path: Path) -> None:
     await compare_with_golden(db, report, "mit")
 
 
+async def test_zh_with_process_pool(db: Database, tmp_path: Path) -> None:
+    report, events = await run(db, tmp_path / "data", ZH, workers=2)
+    assert sum(isinstance(e, FileDone) for e in events) == 5
+    await compare_with_golden(db, report, "zh")
+
+
 # ---------------------------------------------------------------- 增量
 
 
