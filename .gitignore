@@ -28,6 +28,9 @@ htmlcov/
 .env.*
 !.env.example
 
+# Kiro 本机记忆（含本机路径与个人偏好，不公开）
+.kiro/steering/
+
 # 编辑器与系统
 .vscode/
 .idea/
