@@ -8,7 +8,7 @@ import email.utils
 import pytest
 from pydantic import ValidationError
 
-from kaopu_llm import (
+from examprep_llm import (
     AssistantMessage,
     ImageBlock,
     LLMRequest,
@@ -32,8 +32,8 @@ from kaopu_llm import (
     provider_config,
     truncate_to_tokens,
 )
-from kaopu_llm.accumulator import parse_tool_arguments
-from kaopu_llm.errors import (
+from examprep_llm.accumulator import parse_tool_arguments
+from examprep_llm.errors import (
     AuthenticationError,
     BadRequestError,
     ContextOverflowError,
@@ -41,10 +41,10 @@ from kaopu_llm.errors import (
     RateLimitError,
     ServerError,
 )
-from kaopu_llm.protocols import QuotaExceededError, map_http_error, map_stream_error, parse_retry_after
-from kaopu_llm.protocols._http import extract_error
-from kaopu_llm.registry import FREE
-from kaopu_llm.testing import FakeClock, FakeProvider, FakeTurn
+from examprep_llm.protocols import QuotaExceededError, map_http_error, map_stream_error, parse_retry_after
+from examprep_llm.protocols._http import extract_error
+from examprep_llm.registry import FREE
+from examprep_llm.testing import FakeClock, FakeProvider, FakeTurn
 
 # ---------------------------------------------------------------- 错误映射
 

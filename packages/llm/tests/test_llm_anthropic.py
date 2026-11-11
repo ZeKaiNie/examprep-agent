@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from kaopu_llm import (
+from examprep_llm import (
     AssistantMessage,
     ImageBlock,
     LLMRequest,
@@ -19,9 +19,9 @@ from kaopu_llm import (
     UserMessage,
     provider_config,
 )
-from kaopu_llm.errors import AuthenticationError, ContextOverflowError, RateLimitError, ServerError
-from kaopu_llm.protocols import AnthropicProvider
-from kaopu_llm.testing import sse_response, sse_text
+from examprep_llm.errors import AuthenticationError, ContextOverflowError, RateLimitError, ServerError
+from examprep_llm.protocols import AnthropicProvider
+from examprep_llm.testing import sse_response, sse_text
 
 REG = ModelRegistry()
 SONNET = REG.get("anthropic", "claude-sonnet-4-5", "anthropic")

@@ -1,6 +1,6 @@
 """Agent 循环（R6）。
 
-一次 ``run`` 是一个异步生成器，产出 :mod:`kaopu_agent.events` 中的事件。流程见设计文档 3.6 节。
+一次 ``run`` 是一个异步生成器，产出 :mod:`examprep_runtime.events` 中的事件。流程见设计文档 3.6 节。
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from kaopu_llm import (
+from examprep_llm import (
     AbortedError,
     AssistantMessage,
     CancelToken,
@@ -65,7 +65,7 @@ SKIPPED_TEXT = "未执行：本批调用已中止。"
 
 
 class LLMClient(Protocol):
-    """Agent 依赖的模型接口；:class:`kaopu_llm.Gateway` 满足该协议。"""
+    """Agent 依赖的模型接口；:class:`examprep_llm.Gateway` 满足该协议。"""
 
     def stream(
         self,

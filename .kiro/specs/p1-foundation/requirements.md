@@ -1,10 +1,10 @@
 # P1 地基：需求
 
-范围：`kaopu-llm`（L1 模型层）与 `kaopu-agent`（L2 运行时）两个包，以及仓库工程化。
+范围：`examprep-llm`（L1 模型层）与 `examprep-runtime`（L2 运行时）两个包，以及仓库工程化。
 不含任何学习领域代码。设计依据：`docs/design/03-architecture.md`、`docs/design/04-agent-core.md`。
 
 ## R1 仓库与工程化
-1. uv workspace，包含 `packages/llm`、`packages/agent`，Python ≥ 3.11，版本号同步。
+1. uv workspace，包含 `packages/llm`、`packages/runtime`，Python ≥ 3.11，版本号同步。
 2. ruff（lint + format）、pyright（strict，作用于两个包的 src）、pytest + pytest-asyncio。
 3. GitHub Actions：Windows / Linux / macOS × Python 3.11 / 3.12 运行 lint、类型检查、测试。
 4. MIT 许可证、`.gitignore`、`.editorconfig`、README 初版。

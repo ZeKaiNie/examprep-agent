@@ -17,7 +17,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
-from kaopu_llm import SYSTEM_CLOCK, Clock, ImageBlock, Message, TextBlock, UserMessage
+from examprep_llm import SYSTEM_CLOCK, Clock, ImageBlock, Message, TextBlock, UserMessage
 
 from .events import AgentEnd, AgentEvent
 from .loop import Agent, to_user_message

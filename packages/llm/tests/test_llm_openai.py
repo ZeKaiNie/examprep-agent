@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 import pytest
 
-from kaopu_llm import (
+from examprep_llm import (
     AssistantMessage,
     DoneEvent,
     ImageBlock,
@@ -20,15 +20,15 @@ from kaopu_llm import (
     UserMessage,
     provider_config,
 )
-from kaopu_llm.errors import (
+from examprep_llm.errors import (
     ContextOverflowError,
     LLMTimeoutError,
     NetworkError,
     RateLimitError,
     ServerError,
 )
-from kaopu_llm.protocols import OpenAICompatProvider
-from kaopu_llm.testing import sse_response, sse_text
+from examprep_llm.protocols import OpenAICompatProvider
+from examprep_llm.testing import sse_response, sse_text
 
 REG = ModelRegistry()
 WEATHER = ToolSpec(

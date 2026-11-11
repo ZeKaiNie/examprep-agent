@@ -5,10 +5,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from kaopu_agent import ToolContext, tool
-from kaopu_agent.subagent import NUDGE_TEXT, SUBMIT_TOOL, run_subagent
-from kaopu_llm import CancelToken, Gateway, ServerError, SystemMessage, UserMessage
-from kaopu_llm.testing import FakeClock, FakeProvider, FakeTurn
+from examprep_llm import CancelToken, Gateway, ServerError, SystemMessage, UserMessage
+from examprep_llm.testing import FakeClock, FakeProvider, FakeTurn
+from examprep_runtime import ToolContext, tool
+from examprep_runtime.subagent import NUDGE_TEXT, SUBMIT_TOOL, run_subagent
 
 
 class GradeResult(BaseModel):

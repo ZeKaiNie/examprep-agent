@@ -8,8 +8,10 @@ from typing import Any
 
 import pytest
 
-from kaopu_agent import Agent
-from kaopu_agent.session import (
+from examprep_llm import AssistantMessage, TextBlock, UserMessage
+from examprep_llm.testing import FakeTurn
+from examprep_runtime import Agent
+from examprep_runtime.session import (
     EventStore,
     InMemoryEventStore,
     SessionNotFoundError,
@@ -18,8 +20,6 @@ from kaopu_agent.session import (
     load_messages,
     project_messages,
 )
-from kaopu_llm import AssistantMessage, TextBlock, UserMessage
-from kaopu_llm.testing import FakeTurn
 
 
 @pytest.fixture(params=["memory", "sqlite"])
@@ -138,7 +138,7 @@ async def test_recorder_and_projection(store: EventStore, make_agent: Any) -> No
 def test_project_ignores_other_events() -> None:
     from datetime import UTC, datetime
 
-    from kaopu_agent.session import StoredEvent, message_payload
+    from examprep_runtime.session import StoredEvent, message_payload
 
     msg = UserMessage(content=[TextBlock(text="hi")])
     now = datetime.now(UTC)

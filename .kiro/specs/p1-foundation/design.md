@@ -5,7 +5,7 @@
 
 ## 0. 设计原则
 
-1. **L1 不知道 Agent，L2 不知道学习**。`kaopu_llm` 只依赖 httpx、pydantic；`kaopu_agent` 只依赖 `kaopu_llm`、pydantic 和标准库。
+1. **L1 不知道 Agent，L2 不知道学习**。`examprep_llm` 只依赖 httpx、pydantic；`examprep_runtime` 只依赖 `examprep_llm`、pydantic 和标准库。
 2. **可确定性测试**。时间（`Clock`）、随机数（`random.Random`）、HTTP（`httpx` transport）全部可注入；重试、限流、熔断测试不真正睡眠。
 3. **数据结构可序列化**。消息、事件都是 Pydantic v2 模型，带 `type`/`role` 判别字段，直接进事件存储和 SSE。
 4. **取消是一等公民**。`CancelToken` 从 Agent 一路传到网关和工具；取消后 HTTP 流立即关闭。
@@ -14,15 +14,15 @@
 ## 1. 仓库结构
 
 ```
-kaopu/                                  # 仓库根（即本工作区）
+examprep-agent/                         # 仓库根（即本工作区）
 ├ pyproject.toml                        # uv workspace 根（package = false）+ ruff/pyright/pytest/coverage 配置
 ├ uv.lock
 ├ .python-version                       # 3.12
 ├ LICENSE  README.md  .gitignore  .editorconfig
 ├ .github/workflows/ci.yml
 ├ packages/
-│  ├ llm/   pyproject.toml  README.md  src/kaopu_llm/   tests/
-│  └ agent/ pyproject.toml  README.md  src/kaopu_agent/ tests/
+│  ├ llm/     pyproject.toml  README.md  src/examprep_llm/      tests/
+│  └ runtime/ pyproject.toml  README.md  src/examprep_runtime/  tests/
 ├ tests/                                # 跨包集成：版本一致性、三协议回放验收、在线测试
 └ docs/design/  .kiro/
 ```
@@ -31,7 +31,7 @@ kaopu/                                  # 仓库根（即本工作区）
 - 开发依赖放根 `[dependency-groups] dev`：pytest、pytest-asyncio、pytest-cov、ruff、`pyright[nodejs]`（自带 Node，不依赖本机 Node 16）。
 - pytest 用 `--import-mode=importlib`，`asyncio_mode = "auto"`；在线测试标 `live`，默认跳过。
 
-## 2. kaopu_llm（L1）
+## 2. examprep_llm（L1）
 
 ### 2.1 文件清单
 
@@ -314,7 +314,7 @@ class FakeProvider:                      # 实现 Provider 协议，protocol = "
 - 能力表：`deepseek-chat` / `deepseek-reasoner` 已于 2026-07 下线，改为 `deepseek-flash`（V4.1-Flash）与 `deepseek-v4-pro`，价格按官方高峰价。
 - 回放夹具 `deepseek_flash_*.sse` 是 2026-11-11 录制的真实流（不含密钥）。
 
-## 3. kaopu_agent（L2）
+## 3. examprep_runtime（L2）
 
 ### 3.1 文件清单
 
@@ -559,7 +559,7 @@ class ContextAssembler:
 | 验收 | `tests/test_acceptance_replay.py`：同一“调用工具 → 根据结果回答”脚本在三种协议回放中通过 |
 | 在线 | `tests/test_live.py`（`-m live`）：DeepSeek / Anthropic / Gemini 需 Key，Ollama 需本地服务；无则跳过 |
 
-覆盖率目标：`kaopu_llm`、`kaopu_agent` 合计 ≥ 85%，CI 中 `--cov-fail-under=85`。
+覆盖率目标：`examprep_llm`、`examprep_runtime` 合计 ≥ 85%，CI 中 `--cov-fail-under=85`。
 
 ## 5. 暂不做（留给后续阶段）
 

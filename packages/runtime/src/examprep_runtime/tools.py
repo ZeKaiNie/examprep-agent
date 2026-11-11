@@ -13,7 +13,7 @@ from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from kaopu_llm import CancelToken, ImageBlock, TextBlock, ToolCallBlock, ToolSpec
+from examprep_llm import CancelToken, ImageBlock, TextBlock, ToolCallBlock, ToolSpec
 
 P = TypeVar("P", bound=BaseModel)
 

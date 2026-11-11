@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from kaopu_llm import (
+from examprep_llm import (
     AssistantMessage,
     ImageBlock,
     LLMRequest,
@@ -18,10 +18,10 @@ from kaopu_llm import (
     UserMessage,
     provider_config,
 )
-from kaopu_llm.errors import AuthenticationError, ContextOverflowError, RateLimitError, ServerError
-from kaopu_llm.protocols import GeminiProvider
-from kaopu_llm.protocols.gemini import sanitize_schema
-from kaopu_llm.testing import sse_response, sse_text
+from examprep_llm.errors import AuthenticationError, ContextOverflowError, RateLimitError, ServerError
+from examprep_llm.protocols import GeminiProvider
+from examprep_llm.protocols.gemini import sanitize_schema
+from examprep_llm.testing import sse_response, sse_text
 
 REG = ModelRegistry()
 FLASH = REG.get("gemini", "gemini-2.5-flash", "gemini")

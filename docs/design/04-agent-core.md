@@ -13,7 +13,7 @@ Skill 的演进证明了一件事：能用代码做的事交给模型，模型�
 
 这样做的好处是小模型也能用：它只需要在很窄的范围里生成内容。
 
-## 1. Agent 循环（`kaopu_agent.loop`）
+## 1. Agent 循环（`examprep_runtime.loop`）
 
 参考：pi-agent-core 的事件流和钩子；Claude Code 的 `async function* query()`。
 
@@ -53,7 +53,7 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 | 预算 | 单轮最大工具调用次数、最大 token、最大成本；超出时结束并告知用户 |
 | 死循环保护 | 连续 3 次相同工具调用且参数相同，强制结束并记录 |
 
-## 2. 上下文引擎（`kaopu_agent.context`）
+## 2. 上下文引擎（`examprep_runtime.context`）
 
 参考：Claude Code 的分层系统提示和四级压缩；Codex 的“用户原话按最新优先保留”；OpenClaw 的可插拔 ContextEngine；Hermes 的会话内冻结快照。
 
@@ -97,7 +97,7 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 
 **为什么学习场景的压缩可以做得很稳**：学习进度、错题、掌握度本来就在数据库里，摘要丢了信息也不会丢进度。这是“结构化状态 + 对话摘要”双轨的好处，可以在面试里重点讲。
 
-## 3. 记忆（`kaopu_agent.memory` + `kaopu.learner`）
+## 3. 记忆（`examprep_runtime.memory` + `examprep.learner`）
 
 参考：Letta 的分层记忆、Mem0 v3 的只追加写入、Hermes 的有上限画像、Claude Code 的记忆索引。
 
@@ -115,7 +115,7 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 3. **只追加**：Attempt、ReviewLog、Event 不覆盖不删除，掌握度是从它们重新计算出来的，可以随时重算。
 4. **会话内冻结**：L3 快照在会话开始时生成，会话中途更新只写数据库，不改上下文，以保住缓存。
 
-## 4. 多 Agent 协作（`kaopu_agent.subagent` + `kaopu.agents`）
+## 4. 多 Agent 协作（`examprep_runtime.subagent` + `examprep.agents`）
 
 参考：Claude Code 的 Task 子 Agent 和只读 verifier；Anthropic 关于“何时用多 Agent”的讨论。
 
@@ -138,7 +138,7 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 - 后台子 Agent（Curator、预生成复习卡）完成后通过事件通知，不阻塞对话。
 - 每个子 Agent 有独立的预算和超时；超时降级为规则结果（例如 Grader 超时就展示参考答案让学生自评）。
 
-## 5. 并发（`kaopu.server` + `kaopu_llm.gateway`）
+## 5. 并发（`examprep.server` + `examprep_llm.gateway`）
 
 | 层级 | 问题 | 做法 | 参考 |
 |---|---|---|---|
@@ -151,14 +151,14 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 | 任务持久化 | 进程崩溃后导入要能继续 | 任务表 + 租约，过期租约的任务被重新领取；任务幂等 | |
 | 背压 | 用户上传过多文件或请求过快 | 有界队列，满了返回 429 并告知预计等待时间 | |
 
-## 6. 持久化与回放（`kaopu_agent.session`）
+## 6. 持久化与回放（`examprep_runtime.session`）
 
 - **事件溯源**：会话里发生的一切都是 `Event`，按 `seq` 只追加。当前状态是事件的投影。
 - **分叉**：从任意事件分叉一个新会话（“换一种讲法再讲一遍”），新会话 `parent_id + fork_at_seq` 指向原处，参考 pi 的树形会话。
 - **崩溃恢复**：未完成的轮次在重启后可以继续或标记为中断。
 - **确定性回放**：记录每次模型请求的输入哈希和输出，测试时可以用录制结果回放，这也是后期 benchmark 的基础。
 
-## 7. 反幻觉：引用由系统生成（`kaopu.knowledge` + Verifier）
+## 7. 反幻觉：引用由系统生成（`examprep.knowledge` + Verifier）
 
 这是项目最核心的卖点，设计成“结构上就不可能编页码”。
 
@@ -182,7 +182,7 @@ async def run(state, input, cfg) -> AsyncIterator[Event]:
 | 密钥泄露 | API Key 存系统钥匙串（keyring）或环境变量，日志和 trace 自动脱敏 |
 | 资源滥用 | 每用户每天的 token 和成本上限；上传文件大小和数量上限 |
 
-## 9. 模型网关（`kaopu_llm`）
+## 9. 模型网关（`examprep_llm`）
 
 - **三种协议覆盖绝大多数厂商**：OpenAI 兼容（含 DeepSeek、通义、GLM、Kimi、MiniMax、硅基流动、OpenRouter、Ollama、LM Studio、vLLM、llama.cpp）、Anthropic 原生、Gemini 原生。
 - **能力表**：每个模型记录上下文长度、最大输出、是否支持工具调用、视觉、推理模式、prompt cache、价格。上层按能力做决策（例如不支持工具调用的本地模型改用 JSON 模式）。

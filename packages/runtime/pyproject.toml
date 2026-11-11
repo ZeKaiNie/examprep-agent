@@ -1,12 +1,12 @@
 [project]
-name = "kaopu-agent"
+name = "examprep-runtime"
 version = "0.1.0.dev0"
-description = "Kaopu L2：通用 Agent 运行时（循环、工具、事件溯源会话、lane、子 Agent、上下文组装）"
+description = "ExamPrep Agent L2：通用 Agent 运行时（循环、工具、事件溯源会话、lane、子 Agent、上下文组装）"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [{ name = "ZeKaiNie" }]
-dependencies = ["kaopu-llm", "pydantic>=2.7"]
+dependencies = ["examprep-llm", "pydantic>=2.7"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
@@ -16,11 +16,15 @@ classifiers = [
 ]
 
 [tool.uv.sources]
-kaopu-llm = { workspace = true }
+examprep-llm = { workspace = true }
+
+[project.urls]
+Homepage = "https://github.com/ZeKaiNie/examprep-agent"
+Issues = "https://github.com/ZeKaiNie/examprep-agent/issues"
 
 [build-system]
 requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/kaopu_agent"]
+packages = ["src/examprep_runtime"]

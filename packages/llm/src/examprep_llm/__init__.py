@@ -1,4 +1,4 @@
-"""Kaopu L1：多厂商统一模型接口。"""
+"""ExamPrep Agent L1：多厂商统一模型接口。"""
 
 from .accumulator import StreamAccumulator
 from .cancel import CancelToken, cancellable

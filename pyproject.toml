@@ -1,9 +1,9 @@
 [project]
-name = "kaopu-workspace"
+name = "examprep-workspace"
 version = "0.1.0.dev0"
-description = "Kaopu 开发工作区（不发布）"
+description = "ExamPrep Agent 开发工作区（不发布）"
 requires-python = ">=3.11"
-dependencies = ["kaopu-llm", "kaopu-agent"]
+dependencies = ["examprep-llm", "examprep-runtime"]
 
 [tool.uv]
 package = false
@@ -12,8 +12,8 @@ package = false
 members = ["packages/*"]
 
 [tool.uv.sources]
-kaopu-llm = { workspace = true }
-kaopu-agent = { workspace = true }
+examprep-llm = { workspace = true }
+examprep-runtime = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -28,7 +28,7 @@ dev = [
 [tool.ruff]
 line-length = 110
 target-version = "py311"
-src = ["packages/llm/src", "packages/agent/src"]
+src = ["packages/llm/src", "packages/runtime/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "ASYNC", "PT", "C4", "PIE", "RET"]
@@ -45,11 +45,11 @@ ignore = [
 "tests/**" = ["B011", "PT012"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["kaopu_llm", "kaopu_agent"]
+known-first-party = ["examprep_llm", "examprep_runtime"]
 
 # ---------- pyright ----------
 [tool.pyright]
-include = ["packages/llm/src", "packages/agent/src"]
+include = ["packages/llm/src", "packages/runtime/src"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
 venvPath = "."
@@ -57,7 +57,7 @@ venv = ".venv"
 
 # ---------- pytest ----------
 [tool.pytest.ini_options]
-testpaths = ["packages/llm/tests", "packages/agent/tests", "tests"]
+testpaths = ["packages/llm/tests", "packages/runtime/tests", "tests"]
 addopts = ["--import-mode=importlib", "-m", "not live", "--strict-markers"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -65,7 +65,7 @@ markers = ["live: 需要真实 API Key 或本地模型服务的在线测试（�
 
 # ---------- coverage ----------
 [tool.coverage.run]
-source = ["kaopu_llm", "kaopu_agent"]
+source = ["examprep_llm", "examprep_runtime"]
 branch = true
 
 [tool.coverage.report]

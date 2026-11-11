@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 from pydantic import TypeAdapter
 
-from kaopu_llm import Message
+from examprep_llm import Message
 
 from .store import StoredEvent
 

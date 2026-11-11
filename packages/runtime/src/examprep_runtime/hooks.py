@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel
 
-from kaopu_llm import AssistantMessage, LLMRequest, ToolCallBlock, ToolResultMessage
+from examprep_llm import AssistantMessage, LLMRequest, ToolCallBlock, ToolResultMessage
 
 from .tools import Tool, ToolOutput
 

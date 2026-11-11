@@ -5,9 +5,9 @@ from typing import Any
 
 import pytest
 
-from kaopu_agent import Agent
-from kaopu_llm import Gateway
-from kaopu_llm.testing import FakeClock, FakeProvider, ScriptItem
+from examprep_llm import Gateway
+from examprep_llm.testing import FakeClock, FakeProvider, ScriptItem
+from examprep_runtime import Agent
 
 
 def _gateway(fake: FakeProvider) -> Gateway:

@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from kaopu_llm import ToolCallBlock
+from examprep_llm import ToolCallBlock
 
 Verdict = Literal["ok", "max_tool_calls", "loop_detected"]
 

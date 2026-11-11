@@ -7,7 +7,7 @@
 ```
 L4 前端        web/（React）   cli/   mcp/   gateways/（飞书、Telegram、QQ）
                        │ HTTP + SSE / WebSocket / stdio
-L3 应用        kaopu（学习领域）
+L3 应用        examprep（学习领域）
                ├ server      FastAPI、鉴权、租户、会话路由
                ├ pedagogy    教学状态机、策略、计划器
                ├ ingest      资料引擎（移植 Skill）
@@ -15,7 +15,7 @@ L3 应用        kaopu（学习领域）
                ├ learner     学习者模型、FSRS、错题、困惑点
                ├ agents      Tutor / Examiner / Grader / Verifier / Planner / Curator
                └ tools       给 Agent 用的领域工具
-L2 运行时      kaopu-agent（与学习无关的通用 harness）
+L2 运行时      examprep-runtime（与学习无关的通用 harness）
                ├ loop        异步生成器循环、工具执行、钩子、steer/follow-up
                ├ context     上下文引擎：分层组装、预算、压缩
                ├ memory      记忆接口：工作/情景/语义/程序
@@ -23,7 +23,7 @@ L2 运行时      kaopu-agent（与学习无关的通用 harness）
                ├ subagent    子 Agent 派生、隔离、结构化回传
                ├ policy      工具权限、预算、护栏
                └ telemetry   OpenTelemetry GenAI 语义约定
-L1 模型层      kaopu-llm（与 Agent 无关的多厂商接口）
+L1 模型层      examprep-llm（与 Agent 无关的多厂商接口）
                ├ protocols   openai-compatible / anthropic / gemini 三种协议
                ├ registry    模型能力表：上下文、工具调用、视觉、推理、缓存、价格
                ├ gateway     限流、重试、熔断、降级链、取消
@@ -35,11 +35,11 @@ L1 模型层      kaopu-llm（与 Agent 无关的多厂商接口）
 ## 2. 仓库结构
 
 ```
-kaopu/
+examprep-agent/
 ├ packages/
-│  ├ llm/        kaopu_llm/       # L1
-│  ├ agent/      kaopu_agent/     # L2
-│  └ app/        kaopu/           # L3（含 server、cli、mcp）
+│  ├ llm/        examprep_llm/      # L1
+│  ├ runtime/    examprep_runtime/  # L2
+│  └ app/        examprep/          # L3（含 server、cli、mcp）
 ├ web/                             # L4 Web App（Vite + React + TS）
 ├ skills/                          # 教学策略（程序记忆，Markdown）
 ├ samples/                         # 示例课程（沿用 Skill 的中文样例 + 公开课抓取脚本）

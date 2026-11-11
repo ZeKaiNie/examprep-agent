@@ -1,7 +1,7 @@
 """统一的流式事件（R2.2）。
 
 三种协议的流式输出都转换成这一套事件。``index`` 是该块在最终 ``AssistantMessage.content`` 中的下标。
-错误不作为事件出现，而是以 :class:`kaopu_llm.errors.LLMError` 抛出。
+错误不作为事件出现，而是以 :class:`examprep_llm.errors.LLMError` 抛出。
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Kaopu L2：通用 Agent 运行时。"""
+"""ExamPrep Agent L2：通用 Agent 运行时。"""
 
 from .budget import Budget, CallTracker
 from .context import AssembledContext, ContextAssembler, ContextSection, SectionReport

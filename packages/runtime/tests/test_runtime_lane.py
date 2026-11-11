@@ -5,10 +5,10 @@ from typing import Any
 
 import pytest
 
-from kaopu_agent import Agent, AgentEnd, AgentEvent, AgentStart, MessageUpdate
-from kaopu_agent.lane import LaneManager, merge_messages
-from kaopu_llm import Gateway, ImageBlock, TextBlock, TextDelta, UserMessage
-from kaopu_llm.testing import FakeClock, FakeProvider, FakeTurn
+from examprep_llm import Gateway, ImageBlock, TextBlock, TextDelta, UserMessage
+from examprep_llm.testing import FakeClock, FakeProvider, FakeTurn
+from examprep_runtime import Agent, AgentEnd, AgentEvent, AgentStart, MessageUpdate
+from examprep_runtime.lane import LaneManager, merge_messages
 
 
 class World:

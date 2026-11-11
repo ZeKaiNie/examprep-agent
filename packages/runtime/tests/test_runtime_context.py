@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from kaopu_agent.context import ContextAssembler, ContextSection
-from kaopu_llm import estimate_tokens
+from examprep_llm import estimate_tokens
+from examprep_runtime.context import ContextAssembler, ContextSection
 
 
 def sec(name: str, n: int, **kw: object) -> ContextSection:

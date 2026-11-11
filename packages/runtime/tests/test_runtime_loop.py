@@ -6,7 +6,18 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from kaopu_agent import (
+from examprep_llm import (
+    AssistantMessage,
+    LLMRequest,
+    ServerError,
+    SystemMessage,
+    TextBlock,
+    TextDelta,
+    ToolResultMessage,
+    UserMessage,
+)
+from examprep_llm.testing import FakeProvider, FakeTurn
+from examprep_runtime import (
     Agent,
     AgentEnd,
     AgentEvent,
@@ -24,17 +35,6 @@ from kaopu_agent import (
     TurnDecision,
     tool,
 )
-from kaopu_llm import (
-    AssistantMessage,
-    LLMRequest,
-    ServerError,
-    SystemMessage,
-    TextBlock,
-    TextDelta,
-    ToolResultMessage,
-    UserMessage,
-)
-from kaopu_llm.testing import FakeProvider, FakeTurn
 
 
 async def collect(agent: Agent, input: Any = None, **kw: Any) -> list[AgentEvent]:
@@ -456,7 +456,7 @@ async def test_abort_during_tool_execution(make_agent: Any) -> None:
 
 
 async def test_abort_via_external_token(make_agent: Any) -> None:
-    from kaopu_llm import CancelToken
+    from examprep_llm import CancelToken
 
     token = CancelToken()
     token.cancel("外部取消")

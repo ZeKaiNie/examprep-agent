@@ -5,12 +5,12 @@
 ## 1. 仓库与工程化（R1）
 
 - [x] 1.1 `git init`；`.gitignore`、`.editorconfig`、`LICENSE`（MIT）、`README.md` 初版
-- [x] 1.2 uv workspace 根 `pyproject.toml`（package = false）、`.python-version`；`packages/llm`、`packages/agent` 骨架（hatchling、src 布局、`py.typed`）
+- [x] 1.2 uv workspace 根 `pyproject.toml`（package = false）、`.python-version`；`packages/llm`、`packages/runtime` 骨架（hatchling、src 布局、`py.typed`）
 - [x] 1.3 ruff、pyright（strict）、pytest、coverage 配置；`uv sync` 通过
 - [x] 1.4 版本号一致性测试 `tests/test_versions.py`
 - [x] 1.5 GitHub Actions：3 系统 × Python 3.11/3.12 跑 ruff、pyright、pytest（已写好 workflow；尚无远程仓库，未在 GitHub 上实际运行）
 
-## 2. kaopu_llm（R2–R5）
+## 2. examprep_llm（R2–R5）
 
 - [x] 2.1 `types.py`、`events.py`、`errors.py`：消息、内容块、请求、用量、事件、错误；测试序列化往返与判别字段
 - [x] 2.2 `cancel.py`、`clock.py`：CancelToken、cancellable；测试父子令牌、回调注销、取消中断
@@ -24,7 +24,7 @@
 - [x] 2.10 `testing.py`：FakeProvider、FakeTurn、FakeClock
 - [x] 2.11 网关：重试、限流、熔断、降级、取消、记账；确定性测试
 
-## 3. kaopu_agent（R6–R10）
+## 3. examprep_runtime（R6–R10）
 
 - [x] 3.1 `events.py`、`tools.py`：工具定义、schema 生成、装饰器；测试
 - [x] 3.2 `hooks.py`、`budget.py`、`loop.py`：循环、并行工具、钩子；测试

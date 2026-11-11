@@ -6,9 +6,9 @@ from collections.abc import AsyncIterator
 
 import pytest
 
-from kaopu_llm import AbortedError, CancelToken, cancellable
-from kaopu_llm.clock import SystemClock
-from kaopu_llm.sse import SSEDecoder, SSEEvent, iter_sse_lines
+from examprep_llm import AbortedError, CancelToken, cancellable
+from examprep_llm.clock import SystemClock
+from examprep_llm.sse import SSEDecoder, SSEEvent, iter_sse_lines
 
 # ---------------------------------------------------------------- CancelToken
 
@@ -168,8 +168,8 @@ async def test_sse_random_chunking(seed: int) -> None:
     """字节随机切块（含切断多字节 UTF-8 字符）后解析结果不变。"""
     import httpx
 
-    from kaopu_llm.sse import aiter_sse
-    from kaopu_llm.testing import sse_response, sse_text
+    from examprep_llm.sse import aiter_sse
+    from examprep_llm.testing import sse_response, sse_text
 
     text = sse_text([{"t": "中文内容" * 5}, "[DONE]", ("ping", {"n": 1})])
     expected = iter_sse_lines(text.split("\n"))

@@ -13,7 +13,7 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from kaopu_llm import AssistantMessage, CancelToken, Message, SystemMessage, TextBlock, Usage, UserMessage
+from examprep_llm import AssistantMessage, CancelToken, Message, SystemMessage, TextBlock, Usage, UserMessage
 
 from .budget import Budget
 from .events import AgentEnd, EndReason

@@ -1,4 +1,4 @@
-# Kaopu 设计文档（v0.2，待确认）
+# ExamPrep Agent 设计文档（v1.0，已确认）
 
 | 文档 | 内容 |
 |---|---|
@@ -18,11 +18,7 @@
 | 2026-11-11 | 面向用户使用；benchmark 放在最后（P7）；暂无目标比赛 |
 | 2026-11-11 | 支持主流云端模型和本地模型 |
 | 2026-11-11 | 原 Skill 仓库不改动 |
-
-## 待你确认
-
-1. 项目名 **Kaopu（靠谱）**，还是其他候选（见 02 文档第 5 节）。
-2. 产品形态：本地优先 Web App + CLI 先行，MCP Server 和 IM 机器人第二批，桌面版第三批。
-3. 许可证：MIT（与 Skill 一致）。
-4. 前端用 React（Vite + TypeScript），构建产物打包进 Python 包，本地运行不需要 Node。
-5. 这份设计里有没有你不认同或想加的点。
+| 2026-11-11 | 产品形态：本地优先 Web App + CLI 先行，MCP Server 和 IM 机器人第二批，桌面版第三批 |
+| 2026-11-11 | 许可证 MIT（与 Skill 一致） |
+| 2026-11-11 | 前端 React（Vite + TypeScript），构建产物打包进 Python 包，本地运行不需要 Node |
+| 2026-11-11 | 项目名 **ExamPrep Agent**（中文口号“靠谱”），仓库 `ZeKaiNie/examprep-agent`；包名 `examprep-llm` / `examprep-runtime` / `examprep`。设计初稿中的名字 Kaopu 已全部替换，见 02 文档第 5 节 |

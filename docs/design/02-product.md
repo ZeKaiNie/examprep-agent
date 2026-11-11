@@ -49,8 +49,8 @@ DeepTutor 是最强的竞品，功能面很广，定位是通用学习工作台�
 
 | 前端 | 面向谁 | 优先级 | 说明 |
 |---|---|---|---|
-| **Web App（本地优先）** | 所有学生 | P0 | `kaopu` 一条命令启动，自动打开浏览器。左侧聊天，右侧原文阅读器，点击引用跳到对应页并高亮；进度、错题、复习日历各一个面板 |
-| **CLI** | 开发者、无界面环境 | P0 | 和 Web 共用服务；`kaopu ingest`、`kaopu chat`、`kaopu review` |
+| **Web App（本地优先）** | 所有学生 | P0 | `examprep` 一条命令启动，自动打开浏览器。左侧聊天，右侧原文阅读器，点击引用跳到对应页并高亮；进度、错题、复习日历各一个面板 |
+| **CLI** | 开发者、无界面环境 | P0 | 和 Web 共用服务；`examprep ingest`、`examprep chat`、`examprep review` |
 | **MCP Server** | 现有 Skill 用户、Claude Code/Cursor 用户 | P1 | 把检索、出题、判分、记录作为 MCP 工具暴露，延续 Skill 的生态位，可以再上 awesome 列表 |
 | **IM 机器人** | 长期学习用户 | P1 | 飞书、Telegram、QQ。每天推送到期复习题，直接在聊天里答题。这是长期模式留住用户的关键 |
 | **桌面版** | 不想开命令行的学生 | P2 | Tauri 包装 Web App，双击安装 |
@@ -62,11 +62,11 @@ DeepTutor 是最强的竞品，功能面很广，定位是通用学习工作台�
 
 ```bash
 # 推荐：uv
-uv tool install kaopu && kaopu
+uv tool install examprep && examprep
 # 或 pip
-pip install kaopu && kaopu
+pip install examprep && examprep
 # Windows 一行
-irm https://kaopu.dev/install.ps1 | iex
+irm https://raw.githubusercontent.com/ZeKaiNie/examprep-agent/main/install.ps1 | iex
 # 服务器模式
 docker compose up -d
 ```
@@ -81,12 +81,16 @@ docker compose up -d
 
 | 候选 | 含义 | 优点 | 缺点 |
 |---|---|---|---|
-| **Kaopu 靠谱**（推荐） | “靠谱”谐音“考谱” | 直接点出核心卖点“不编造”，又和“考”相关；中文用户一看就懂、好记、好传播；PyPI 上 `kaopu` 未被占用，GitHub 同名仓库只有零星无关项目 | 英文用户需要一句解释 |
+| Kaopu 靠谱（初稿推荐，未采用） | “靠谱”谐音“考谱” | 直接点出核心卖点“不编造”，又和“考”相关；中文用户一看就懂、好记、好传播；PyPI 上 `kaopu` 未被占用，GitHub 同名仓库只有零星无关项目 | 英文用户需要一句解释 |
 | Xueba 学霸 | 学霸 | 认知度高 | GitHub 上名字含 xueba 的仓库有 325 个，难以搜索到 |
 | Exam Cram Coach Agent | 延续 Skill 品牌 | 继承已有的 awesome 列表收录和老用户 | 名字长，“cram”只覆盖突击场景，和长期学习定位不符 |
 
-推荐 **Kaopu**，仓库名 `kaopu`，英文副标题：
-> **Kaopu (靠谱, "reliable")** — the study agent that cites every page, quizzes you with real exam questions, and remembers what you got wrong.
+~~推荐 **Kaopu**，仓库名 `kaopu`。~~
+
+**最终决定（2026-11-11）**：项目名 **ExamPrep Agent**，仓库 `ZeKaiNie/examprep-agent`，包名 `examprep`（应用）、`examprep-runtime`（L2）、`examprep-llm`（L1），命令 `examprep`。理由：用户希望采用“xx agent”的命名形式，且与 Skill（universal-examprep-skill）一脉相承，老用户一眼能认出。“靠谱”保留为中文口号。用户第一版同名仓库已改名为 `examprep-agent-v0`。
+
+英文副标题：
+> **ExamPrep Agent** — the study agent that cites every page, quizzes you with real exam questions, and remembers what you got wrong.
 
 中文副标题：
 > **靠谱**：只讲你资料里有的，每句话都能翻到原文那一页。

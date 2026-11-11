@@ -4,9 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from kaopu_agent import NoParams, Tool, ToolContext, ToolOutput, model_schema
-from kaopu_agent.budget import Budget, CallTracker, call_signature
-from kaopu_llm import CancelToken, ImageBlock, TextBlock, ToolCallBlock
+from examprep_llm import CancelToken, ImageBlock, TextBlock, ToolCallBlock
+from examprep_runtime import NoParams, Tool, ToolContext, ToolOutput, model_schema
+from examprep_runtime.budget import Budget, CallTracker, call_signature
 
 
 class Page(BaseModel):

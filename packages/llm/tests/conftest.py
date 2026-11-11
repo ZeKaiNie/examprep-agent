@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 import pytest
 
-from kaopu_llm.testing import sse_response
+from examprep_llm.testing import sse_response
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

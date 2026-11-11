@@ -1,6 +1,6 @@
-# kaopu-agent
+# examprep-runtime
 
-Kaopu 的通用 Agent 运行时（L2），只依赖 `kaopu-llm`，不含学习领域代码。
+ExamPrep Agent 的通用 Agent 运行时（L2），只依赖 `examprep-llm`，不含学习领域代码。
 
 - 异步生成器 Agent 循环：事件流、并行工具、钩子、steer / follow_up、取消、预算与死循环保护
 - Pydantic 定义工具参数，自动生成 JSON Schema

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from kaopu_llm import Message
+from examprep_llm import Message
 
 from ..events import AgentEnd, AgentEvent, MessageEnd
 from .projection import MESSAGE_EVENT, RUN_END_EVENT, message_payload, project_messages

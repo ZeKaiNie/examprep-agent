@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from kaopu_llm import AssistantMessage, Message, StreamEvent, ToolCallBlock, ToolResultMessage
+from examprep_llm import AssistantMessage, Message, StreamEvent, ToolCallBlock, ToolResultMessage
 
 EndReason = Literal["completed", "aborted", "error", "max_turns", "max_tool_calls", "loop_detected"]
 

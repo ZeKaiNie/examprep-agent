@@ -10,7 +10,7 @@ from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from kaopu_llm import SystemMessage, estimate_tokens, truncate_to_tokens
+from examprep_llm import SystemMessage, estimate_tokens, truncate_to_tokens
 
 TokenCounter = Callable[[str], int]
 

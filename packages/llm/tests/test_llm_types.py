@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from kaopu_llm import (
+from examprep_llm import (
     AssistantMessage,
     DoneEvent,
     ImageBlock,
@@ -19,7 +19,7 @@ from kaopu_llm import (
     Usage,
     UserMessage,
 )
-from kaopu_llm.errors import AbortedError, LLMError, RateLimitError, ServerError
+from examprep_llm.errors import AbortedError, LLMError, RateLimitError, ServerError
 
 MESSAGES = TypeAdapter(list[Message])
 EVENT = TypeAdapter(StreamEvent)

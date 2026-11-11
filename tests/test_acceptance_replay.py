@@ -14,10 +14,10 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from kaopu_agent import Agent, ToolContext, tool
-from kaopu_agent.session import SessionRecorder, SQLiteEventStore, load_messages
-from kaopu_llm import AssistantMessage, Gateway, GatewayConfig, ToolResultMessage
-from kaopu_llm.testing import sse_response
+from examprep_llm import AssistantMessage, Gateway, GatewayConfig, ToolResultMessage
+from examprep_llm.testing import sse_response
+from examprep_runtime import Agent, ToolContext, tool
+from examprep_runtime.session import SessionRecorder, SQLiteEventStore, load_messages
 
 FIXTURES = Path(__file__).resolve().parents[1] / "packages" / "llm" / "tests" / "fixtures"
 
@@ -75,7 +75,7 @@ async def test_tool_call_script_on_three_protocols(protocol: str, tmp_path: Path
         {"providers": {provider: {"api_key": "test-key"}}, "roles": {"tutor": [ref]}}
     )
     gateway = Gateway.from_config(cfg, transport=httpx.MockTransport(handler))
-    store = SQLiteEventStore(tmp_path / "kaopu.db")
+    store = SQLiteEventStore(tmp_path / "examprep.db")
     session = await store.create_session(metadata={"protocol": protocol})
     recorder = SessionRecorder(store, session.id)
     agent = Agent(gateway, role="tutor", system="你是天气助手", tools=[get_weather])

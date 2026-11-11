@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from kaopu_llm import (
+from examprep_llm import (
     AbortedError,
     CallRecord,
     CancelToken,
@@ -25,14 +25,14 @@ from kaopu_llm import (
     TextDelta,
     UserMessage,
 )
-from kaopu_llm.errors import (
+from examprep_llm.errors import (
     AuthenticationError,
     BadRequestError,
     NoModelAvailableError,
     RateLimitError,
     ServerError,
 )
-from kaopu_llm.gateway import (
+from examprep_llm.gateway import (
     BreakerPolicy,
     CircuitBreaker,
     ProviderLimiter,
@@ -40,7 +40,7 @@ from kaopu_llm.gateway import (
     TokenBucket,
     backoff_delay,
 )
-from kaopu_llm.testing import FakeClock, FakeProvider, FakeTurn, sse_response, sse_text
+from examprep_llm.testing import FakeClock, FakeProvider, FakeTurn, sse_response, sse_text
 
 REQ = LLMRequest(messages=[UserMessage(content="hi")])  # type: ignore[arg-type]
 
@@ -388,7 +388,7 @@ async def test_cancel_before_start() -> None:
 
 
 async def test_cancel_during_backoff() -> None:
-    from kaopu_llm.clock import SystemClock
+    from examprep_llm.clock import SystemClock
 
     fake = FakeProvider([ServerError("x"), FakeTurn(text="ok")])
     g = Gateway(
@@ -410,8 +410,8 @@ async def test_cancel_closes_http_stream() -> None:
     """真实协议适配器：取消后 HTTP 响应流被关闭（R5.5）。"""
     import httpx
 
-    from kaopu_llm.config import provider_config
-    from kaopu_llm.protocols import OpenAICompatProvider
+    from examprep_llm.config import provider_config
+    from examprep_llm.protocols import OpenAICompatProvider
 
     body = sse_text(
         [

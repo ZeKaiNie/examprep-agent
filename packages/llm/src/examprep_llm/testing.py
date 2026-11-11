@@ -40,7 +40,7 @@ ScriptItem = FakeTurn | LLMError | Callable[[LLMRequest], FakeTurn]
 
 
 class FakeProvider:
-    """按脚本依次回复的 provider，实现 :class:`kaopu_llm.protocols.Provider` 协议。"""
+    """按脚本依次回复的 provider，实现 :class:`examprep_llm.protocols.Provider` 协议。"""
 
     protocol = "fake"
 
