@@ -120,6 +120,28 @@ def test_chain_validation() -> None:
 # ---------------------------------------------------------------- 重试
 
 
+async def test_role_reasoning_defaults() -> None:
+    fake = FakeProvider([FakeTurn(text="a"), FakeTurn(text="b"), FakeTurn(text="c")])
+    gw = Gateway(
+        {"fake": fake},
+        {"tutor": ["fake/m"], "grader": ["fake/m"]},
+        clock=FakeClock(),
+        reasoning={"tutor": "low"},
+    )
+    await gw.complete(REQ, role="tutor")
+    await gw.complete(REQ.model_copy(update={"reasoning": "high"}), role="tutor")  # 请求自己设置的优先
+    await gw.complete(REQ, role="grader")  # 未配置的角色：不设置
+    assert [r.reasoning for r in fake.requests] == ["low", "high", None]
+    cfg = GatewayConfig.model_validate(
+        {
+            "providers": {"deepseek": {}},
+            "roles": {"tutor": ["deepseek/deepseek-flash"]},
+            "reasoning": {"tutor": "off"},
+        }
+    )
+    assert Gateway.from_config(cfg).reasoning == {"tutor": "off"}
+
+
 async def test_retry_then_success() -> None:
     clock = FakeClock()
     fake = FakeProvider([ServerError("boom"), FakeTurn(text="ok")])

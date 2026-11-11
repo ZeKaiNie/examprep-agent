@@ -6,6 +6,7 @@
 - ``max_tokens_field``：``max_tokens``（默认）或 ``max_completion_tokens``（openai 默认）
 - ``stream_usage``：是否发送 ``stream_options.include_usage``，默认 True
 - ``send_reasoning``：回传同一 provider 产生的历史推理内容（``reasoning_content``），默认 False（deepseek 预设为 True）
+- ``thinking_toggle``：按 ``reasoning`` 发送 ``thinking: {"type": "enabled" | "disabled"}``，默认 False（deepseek 预设为 True）
 """
 
 from __future__ import annotations
@@ -142,8 +143,12 @@ class OpenAICompatProvider(HTTPProvider):
             body[str(opts.get("max_tokens_field", default_field))] = request.max_tokens
         if request.temperature is not None:
             body["temperature"] = request.temperature
-        if request.reasoning and request.reasoning != "off" and model.supports_reasoning:
-            body["reasoning_effort"] = request.reasoning
+        if request.reasoning and model.supports_reasoning:
+            if request.reasoning != "off":
+                body["reasoning_effort"] = request.reasoning
+            if opts.get("thinking_toggle", False):
+                # DeepSeek：思考模式默认开启，关闭要显式传 thinking.type = disabled
+                body["thinking"] = {"type": "disabled" if request.reasoning == "off" else "enabled"}
         return self._merge_extra(body, request)
 
     def _headers(self) -> dict[str, str]:

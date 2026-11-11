@@ -20,7 +20,7 @@ from .ingest import guard
 from .ingest.events import FileDone, FileFailed, IngestEvent, IngestReport
 from .ingest.pipeline import COURSES_DIR, ingest
 from .ingest.text import shorten
-from .settings import SettingsError, load_settings
+from .settings import REASONING_LEVELS, SettingsError, load_settings
 from .store import Database
 from .store.jobs import IngestBusyError
 from .study.console import run_console
@@ -81,6 +81,12 @@ def _parser() -> argparse.ArgumentParser:
         help="每段讲多少（默认按模型自动选）",
     )
     pt.add_argument("--no-verify", action="store_true", help="不做逐句核对（更快、更省）")
+    pt.add_argument(
+        "--reasoning",
+        choices=list(REASONING_LEVELS),
+        default=None,
+        help="讲解的思考强度（默认 high；关掉更快更省，但例子更容易算错）",
+    )
     return p
 
 
@@ -199,6 +205,8 @@ async def _study(
         course = await find_course(db, args.course)
         if gw is None:
             gw = Gateway.from_config(load_settings(data_dir))
+        if args.reasoning is not None:
+            gw.reasoning["tutor"] = args.reasoning
         tutor = gw.chain(role="tutor")[0]
         session = await StudySession.open(
             db,
@@ -211,7 +219,10 @@ async def _study(
             context_window=gw.model_info(tutor).context_window,
             verify_answers=not args.no_verify,
         )
-        out.write(f"开始学习：{course.name}（讲解模型 {tutor}）。输入“退出”结束，进度会自动保存。\n")
+        level = gw.reasoning.get("tutor") or "厂商默认"
+        out.write(
+            f"开始学习：{course.name}（讲解模型 {tutor}，思考强度 {level}）。输入“退出”结束，进度会自动保存。\n"
+        )
         return await run_console(session, out, read_line, data_dir / COURSES_DIR / course.id)
     except (CourseNotFoundError, SettingsError) as exc:
         sys.stderr.write(f"{exc}\n")

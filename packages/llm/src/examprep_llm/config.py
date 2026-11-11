@@ -49,7 +49,14 @@ PROVIDER_PRESETS: dict[str, ProviderConfig] = {
     for p in (
         _p("openai", "openai", "https://api.openai.com/v1", "OPENAI_API_KEY"),
         # DeepSeek 思考模式默认开启；请求带 tools 时必须回传历史 reasoning_content，否则可能返回 400
-        _p("deepseek", "openai", "https://api.deepseek.com/v1", "DEEPSEEK_API_KEY", send_reasoning=True),
+        _p(
+            "deepseek",
+            "openai",
+            "https://api.deepseek.com/v1",
+            "DEEPSEEK_API_KEY",
+            send_reasoning=True,
+            thinking_toggle=True,
+        ),
         _p("qwen", "openai", "https://dashscope.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
         _p("glm", "openai", "https://open.bigmodel.cn/api/paas/v4", "ZHIPUAI_API_KEY"),
         _p("kimi", "openai", "https://api.moonshot.cn/v1", "MOONSHOT_API_KEY"),

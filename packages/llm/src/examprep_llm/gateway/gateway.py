@@ -18,7 +18,7 @@ from ..errors import AbortedError, AuthenticationError, LLMError, NoModelAvailab
 from ..events import DoneEvent, StartEvent, StreamEvent
 from ..protocols import Provider, build_provider
 from ..registry import ModelInfo, ModelRegistry, compute_cost, parse_model_ref
-from ..types import AssistantMessage, LLMRequest, Usage
+from ..types import AssistantMessage, LLMRequest, ReasoningLevel, Usage
 from .breaker import BreakerPolicy, CircuitBreaker
 from .ledger import CallRecord, Outcome, UsageLedger
 from .ratelimit import ProviderLimiter
@@ -37,6 +37,8 @@ class GatewayConfig(BaseModel):
     providers: dict[str, dict[str, Any]] = Field(default_factory=dict[str, dict[str, Any]])
     models: list[ModelInfo] = Field(default_factory=list[ModelInfo])
     roles: dict[str, list[str]] = Field(default_factory=dict[str, list[str]])
+    # 按角色的思考强度；请求自己设置了 reasoning 时以请求为准，未配置的角色用厂商默认
+    reasoning: dict[str, ReasoningLevel] = Field(default_factory=dict[str, ReasoningLevel])
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     breaker: BreakerPolicy = Field(default_factory=BreakerPolicy)
 
@@ -74,9 +76,11 @@ class Gateway:
         breaker: BreakerPolicy | None = None,
         clock: Clock | None = None,
         rng: random.Random | None = None,
+        reasoning: Mapping[str, ReasoningLevel] | None = None,
     ) -> None:
         self.providers = dict(providers)
         self.roles: dict[str, list[str]] = {k: list(v) for k, v in (roles or {}).items()}
+        self.reasoning: dict[str, ReasoningLevel] = dict(reasoning or {})
         self.registry = registry or ModelRegistry()
         self.retry = retry or RetryPolicy()
         self.breaker_policy = breaker or BreakerPolicy()
@@ -107,6 +111,7 @@ class Gateway:
             breaker=config.breaker,
             clock=clock,
             rng=rng,
+            reasoning=config.reasoning,
         )
 
     # ------------------------------------------------------------ 公共接口
@@ -168,6 +173,9 @@ class Gateway:
         cancel: CancelToken | None = None,
     ) -> AsyncIterator[StreamEvent]:
         chain = self.chain(role=role, model=model)
+        level = self.reasoning.get(role) if role is not None else None
+        if request.reasoning is None and level is not None:
+            request = request.model_copy(update={"reasoning": level})
         last_error: LLMError | None = None
         skipped: list[str] = []
         tried: list[str] = []

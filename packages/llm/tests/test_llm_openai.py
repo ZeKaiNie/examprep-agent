@@ -266,6 +266,22 @@ def test_convert_full_conversation() -> None:
     assert "max_tokens" not in body
 
 
+def test_deepseek_thinking_toggle() -> None:
+    info = REG.get("deepseek", "deepseek-flash", "openai")
+    ds = OpenAICompatProvider(provider_config("deepseek", api_key="k"))
+    off = ds.build_body(req(reasoning="off"), info)
+    assert off["thinking"] == {"type": "disabled"}
+    assert "reasoning_effort" not in off
+    low = ds.build_body(req(reasoning="low"), info)
+    assert (low["thinking"], low["reasoning_effort"]) == ({"type": "enabled"}, "low")
+    assert "thinking" not in ds.build_body(req(), info)  # 未设置：厂商默认
+    # 其他 OpenAI 兼容厂商不认 thinking 字段，不发送
+    gpt = REG.get("openai", "gpt-5-mini", "openai")
+    body = OpenAICompatProvider(provider_config("openai", api_key="k")).build_body(req(reasoning="off"), gpt)
+    assert "thinking" not in body
+    assert "reasoning_effort" not in body
+
+
 def test_send_reasoning_and_disable_stream_usage() -> None:
     # 覆盖的选项与预设合并：deepseek 预设的 send_reasoning=True 保留
     cfg = provider_config("deepseek", options={"stream_usage": False, "max_tokens_field": "max_tokens"})

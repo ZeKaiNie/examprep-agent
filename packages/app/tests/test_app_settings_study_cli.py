@@ -24,8 +24,10 @@ def test_env_key_defaults(tmp_path: Path) -> None:
     assert set(cfg.roles) == {"tutor", "grader", "verifier"}
     cfg = load_settings(tmp_path, {"ANTHROPIC_API_KEY": "a"})
     assert cfg.roles["grader"] == ["anthropic/claude-haiku-4-5"]
+    assert cfg.reasoning == {"tutor": "high", "grader": "high", "verifier": "high"}  # 默认都开思考
     cfg = load_settings(tmp_path, {"EXAMPREP_OLLAMA_MODEL": "qwen3:8b"})
     assert cfg.roles["verifier"] == ["ollama/qwen3:8b"]
+    assert cfg.reasoning == {}  # 本地模型不发送思考参数
     with pytest.raises(SettingsError, match="还没有配置模型"):
         load_settings(tmp_path, {})
 
@@ -38,6 +40,16 @@ def test_config_file(tmp_path: Path) -> None:
     cfg = load_settings(tmp_path, {"DEEPSEEK_API_KEY": "ignored"})
     assert cfg.roles == {"tutor": ["myvllm/qwen"], "grader": ["myvllm/small"], "verifier": ["myvllm/qwen"]}
     assert cfg.providers["myvllm"]["base_url"] == "http://gpu:8000/v1"
+    assert cfg.reasoning["tutor"] == "high"
+    (tmp_path / "config.toml").write_text(
+        '[roles]\ntutor = ["deepseek/deepseek-flash"]\n[reasoning]\ntutor = "low"\n', encoding="utf-8"
+    )
+    assert load_settings(tmp_path, {}).reasoning == {"tutor": "low", "grader": "high", "verifier": "high"}
+    (tmp_path / "config.toml").write_text(
+        '[roles]\ntutor = ["deepseek/deepseek-flash"]\n[reasoning]\ntutor = "very"\n', encoding="utf-8"
+    )
+    with pytest.raises(SettingsError, match="配置无效"):
+        load_settings(tmp_path, {})
     (tmp_path / "config.toml").write_text("[roles]\n", encoding="utf-8")
     with pytest.raises(SettingsError, match="缺少"):
         load_settings(tmp_path, {})
@@ -100,15 +112,20 @@ def test_study_session_end_to_end(data: Path) -> None:
     assert "下一步：" in text
     assert "进度已保存" in text
 
-    # 第二次进入：接着学（第 2 章）
+    # 第二次进入：接着学（第 2 章）；--reasoning 只改讲解的思考强度
     out2 = io.StringIO()
+    gw = fake_gateway()
     cli.main(
-        ["--data-dir", str(data), "study", "数据结构", "--no-verify"],
+        ["--data-dir", str(data), "study", "数据结构", "--no-verify", "--reasoning", "off"],
         out=out2,
-        read_line=scripted(),  # type: ignore[arg-type]
-        gateway=fake_gateway(),
+        read_line=scripted("继续"),  # type: ignore[arg-type]
+        gateway=gw,
     )
     assert "→ 2. 栈和队列" in out2.getvalue()
+    assert "思考强度 off" in out2.getvalue()
+    fake = gw.providers["fake"]
+    assert isinstance(fake, FakeProvider)
+    assert {r.reasoning for r in fake.requests if not r.tools} == {"off"}
 
 
 def test_study_errors(

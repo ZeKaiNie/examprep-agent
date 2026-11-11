@@ -7,6 +7,10 @@ config.toml 示例：
     tutor = ["deepseek/deepseek-flash"]
     grader = ["deepseek/deepseek-flash"]
     verifier = ["deepseek/deepseek-flash"]
+    [reasoning]                     # 思考强度：off / low / medium / high，默认都是 high
+    tutor = "high"                  # 讲解：关掉更快更省，但自编例子更容易算错
+
+单次学习也可以用 ``examprep study --reasoning low`` 只改讲解的思考强度。
 """
 
 from __future__ import annotations
@@ -21,6 +25,9 @@ from examprep_llm import GatewayConfig
 
 CONFIG_FILE = "config.toml"
 ROLES = ("tutor", "grader", "verifier")
+REASONING_LEVELS = ("off", "low", "medium", "high")
+# 默认都开思考（high）：讲解里的例子要算对、判分要准，正确率优先于速度和花费
+DEFAULT_REASONING: dict[str, str] = dict.fromkeys(ROLES, "high")
 
 # (环境变量, provider, tutor 模型, 便宜模型)
 _ENV_DEFAULTS: tuple[tuple[str, str, str, str], ...] = (
@@ -58,6 +65,7 @@ def load_settings(data_dir: str | Path, env: Mapping[str, str] | None = None) ->
         for role in ROLES:
             roles.setdefault(role, tutor)
         data["roles"] = roles
+        data["reasoning"] = {**DEFAULT_REASONING, **dict(data.get("reasoning") or {})}
         try:
             return GatewayConfig.model_validate(data)
         except ValueError as exc:
@@ -72,10 +80,12 @@ def load_settings(data_dir: str | Path, env: Mapping[str, str] | None = None) ->
                         "grader": [f"{provider}/{cheap}"],
                         "verifier": [f"{provider}/{cheap}"],
                     },
+                    "reasoning": DEFAULT_REASONING,
                 }
             )
     model = environ.get(OLLAMA_ENV)
     if model:
         ref = f"ollama/{model}"
+        # 本地模型由服务端决定是否思考，不发送思考参数
         return GatewayConfig.model_validate({"providers": {"ollama": {}}, "roles": {r: [ref] for r in ROLES}})
     raise SettingsError(HELP)
