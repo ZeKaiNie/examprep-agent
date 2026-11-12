@@ -178,6 +178,9 @@ class Enrollment(Base):
     current_chapter: Mapped[int] = mapped_column(Integer, default=1)
     session_id: Mapped[str | None] = mapped_column(String(32), default=None)  # 事件存储里的会话
     session_state: Mapped[dict[str, Any]] = mapped_column(default=dict)
+    # 学习租约（P3b）：同一时间只有一个进程能学这门课；只由 learner.lease 原子更新，save_enrollment 不写
+    lock_owner: Mapped[str | None] = mapped_column(String(64), default=None)
+    lock_until: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 

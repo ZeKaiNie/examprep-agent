@@ -51,6 +51,8 @@ known-first-party = ["examprep_llm", "examprep_runtime", "examprep"]
 # ---------- pyright ----------
 [tool.pyright]
 include = ["packages/llm/src", "packages/runtime/src", "packages/app/src"]
+# Alembic 自动生成的迁移脚本（sa.Double() 等泛型在 strict 下报未知类型）；表结构一致性由测试保证
+exclude = ["packages/app/src/examprep/store/migrations/versions"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
 venvPath = "."

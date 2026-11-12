@@ -30,6 +30,7 @@ from typing import Any
 from examprep_llm import GatewayConfig
 
 CONFIG_FILE = "config.toml"
+SESSIONS_DB = "sessions.db"  # 数据目录下的会话事件库（对话、压缩分段、界面对话记录）
 ROLES = ("tutor", "grader", "verifier")
 REASONING_LEVELS = ("off", "low", "medium", "high")
 # 默认都开思考（high）：讲解里的例子要算对、判分要准，正确率优先于速度和花费

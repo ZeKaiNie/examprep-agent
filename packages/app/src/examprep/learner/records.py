@@ -39,6 +39,17 @@ class LearnerRecords:
 
     # ------------------------------------------------------------ 选课
 
+    async def find_enrollment(self, course_id: str) -> m.Enrollment | None:
+        """只查不建（只读接口用）。"""
+        async with self.db.session() as s:
+            return await s.scalar(
+                select(m.Enrollment).where(
+                    m.Enrollment.tenant_id == self.tenant,
+                    m.Enrollment.user_id == self.user,
+                    m.Enrollment.course_id == course_id,
+                )
+            )
+
     async def enrollment(self, course_id: str) -> m.Enrollment:
         """取或建选课记录。"""
         async with self.db.session() as s:

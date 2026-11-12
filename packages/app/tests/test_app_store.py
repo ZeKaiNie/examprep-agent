@@ -16,7 +16,7 @@ from examprep.store.jobs import IngestBusyError, claim, complete, enqueue, fail,
 @pytest.fixture
 async def db(tmp_path: Path) -> AsyncIterator[Database]:
     d = Database.in_dir(tmp_path / "data")
-    await d.create_all()
+    await d.migrate()
     yield d
     await d.close()
 

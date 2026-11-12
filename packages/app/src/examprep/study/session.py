@@ -14,6 +14,7 @@ from typing import Any
 from sqlalchemy import select
 
 from examprep_llm import (
+    AbortedError,
     AssistantMessage,
     CancelToken,
     LLMError,
@@ -228,7 +229,7 @@ class StudySession:
         timeout: float = 30.0,
         compaction: CompactionPolicy | None = None,
     ) -> StudySession:
-        await db.create_all()
+        await db.migrate()
         course = await load_course(db, course_id)
         records = LearnerRecords(db)
         enr = await records.enrollment(course_id)
@@ -1018,6 +1019,9 @@ class StudySession:
                         if piece:
                             shown.append(piece)
                             yield TutorDelta(text=piece)
+            except AbortedError:
+                yield Notice(text=self._t("已停止。", "Stopped."))
+                return
             except LLMError as exc:
                 yield Notice(level="error", text=self._t(f"模型调用失败：{exc}", f"Model call failed: {exc}"))
                 return

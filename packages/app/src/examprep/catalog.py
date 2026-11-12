@@ -20,7 +20,7 @@ def _abspath(key: str) -> str:
 
 
 async def list_courses(db: Database, *, tenant: str = m.LOCAL_TENANT) -> list[m.Course]:
-    await db.create_all()
+    await db.migrate()
     async with db.session() as s:
         rows = await s.scalars(
             select(m.Course).where(m.Course.tenant_id == tenant).order_by(m.Course.created_at)
@@ -30,7 +30,7 @@ async def list_courses(db: Database, *, tenant: str = m.LOCAL_TENANT) -> list[m.
 
 async def find_course(db: Database, key: str, *, tenant: str = m.LOCAL_TENANT) -> m.Course:
     """按 id、名称或资料目录查找课程；名称重复时报错。"""
-    await db.create_all()
+    await db.migrate()
     root = _abspath(key)
     async with db.session() as s:
         rows = (
