@@ -111,7 +111,7 @@ class Ingestor:
     ) -> AsyncIterator[IngestEvent]:
         t0 = time.perf_counter()
         root_abs, files, shas = await asyncio.to_thread(scan_directory, str(root))
-        await self.db.create_all()
+        await self.db.migrate()
 
         async with self.db.session() as s:
             course = await self._course(s, root_abs, name)

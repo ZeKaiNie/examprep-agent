@@ -7,7 +7,7 @@
 [![CI](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**状态：P1 地基、P2 资料引擎、P3a 学习闭环核心（命令行）已完成；服务接口与 Web 界面开发中。**
+**状态：P1 地基、P2 资料引擎、P3a 学习闭环核心（命令行）、P3b 本机服务端已完成；Web 界面开发中。**
 
 ```bash
 uv sync
@@ -15,7 +15,10 @@ uv run examprep ingest samples/zh-data-structures      # 导入：章节、题�
 uv run examprep search zh-data-structures 循环队列 判满  # 检索，带文件和页码
 export DEEPSEEK_API_KEY=sk-...                          # 或 OPENAI / ANTHROPIC / GEMINI 的 Key，或本地 Ollama
 uv run examprep study zh-data-structures               # 开始学：讲解 → 检查 → 练习 → 判分 → 小结
+uv run examprep serve                                  # 本机网页服务 http://127.0.0.1:8765（接口说明见 /docs）
 ```
+
+`examprep serve` 默认只允许本机访问：拒绝 Host 不是本机地址的请求，也拒绝其他网站借浏览器发来的请求。同一门课同一时间只能在一个地方学（命令行窗口或网页），另一边会提示“正在另一个窗口或网页里学习”。
 
 学习时直接说“继续”“考考我”“没懂”“给个提示”“看答案”“跳到第 3 章”“进度”，或者直接提问。
 讲解里的出处（文件 + 页码）由系统根据证据编号生成，模型写不出不存在的页码；资料里没有的问题会直接回答“资料里没有讲到”。

@@ -14,7 +14,7 @@ from examprep.store import Course, Database, utcnow
 @pytest.fixture
 async def rec(tmp_path: Path) -> AsyncIterator[LearnerRecords]:
     db = Database.in_dir(tmp_path)
-    await db.create_all()
+    await db.migrate()
     async with db.session() as s:
         t = utcnow()
         s.add(Course(id="c1", name="DS", root="/m", created_at=t, updated_at=t))

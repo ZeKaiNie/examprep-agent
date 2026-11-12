@@ -1,17 +1,20 @@
-"""数据库连接：异步引擎、SQLite WAL、建表、会话工厂。"""
+"""数据库连接：异步引擎、SQLite WAL、Alembic 迁移、会话工厂。"""
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import event
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import Connection, event, inspect
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from .models import Base
-
 DB_FILE = "examprep.db"
+MIGRATIONS = Path(__file__).parent / "migrations"
+INITIAL_REVISION = "0001"  # P3a 结束时的表结构
 
 
 def utcnow() -> datetime:
@@ -30,6 +33,8 @@ class Database:
         if url.startswith("sqlite"):
             event.listen(self.engine.sync_engine, "connect", _sqlite_pragmas)
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
+        self._migrated = False
+        self._migrate_lock = asyncio.Lock()
 
     @classmethod
     def in_dir(cls, data_dir: str | Path) -> Database:
@@ -38,15 +43,38 @@ class Database:
         path.mkdir(parents=True, exist_ok=True)
         return cls(sqlite_url(path / DB_FILE))
 
-    async def create_all(self) -> None:
-        async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    async def migrate(self) -> None:
+        """把表结构升级到最新迁移（同一进程里对同一个库只做一次）。"""
+        if self._migrated:
+            return
+        async with self._migrate_lock:
+            if self._migrated:
+                return
+            async with self.engine.begin() as conn:
+                await conn.run_sync(upgrade_schema)
+            self._migrated = True
 
     def session(self) -> AsyncSession:
         return self.sessions()
 
     async def close(self) -> None:
         await self.engine.dispose()
+
+
+def alembic_config(connection: Connection) -> Config:
+    cfg = Config()
+    cfg.set_main_option("script_location", str(MIGRATIONS))
+    cfg.attributes["connection"] = connection
+    return cfg
+
+
+def upgrade_schema(connection: Connection) -> None:
+    """升级到 head。P3b 之前用 create_all 建的库没有 alembic_version 表：先标记为初始版本再升级。"""
+    cfg = alembic_config(connection)
+    tables = set(inspect(connection).get_table_names())
+    if "course" in tables and "alembic_version" not in tables:
+        command.stamp(cfg, INITIAL_REVISION)
+    command.upgrade(cfg, "head")
 
 
 def _sqlite_pragmas(dbapi_conn: Any, _record: Any) -> None:

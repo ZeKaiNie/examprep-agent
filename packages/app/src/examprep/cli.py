@@ -21,13 +21,13 @@ from .ingest import guard
 from .ingest.events import FileDone, FileFailed, IngestEvent, IngestReport
 from .ingest.pipeline import COURSES_DIR, ingest
 from .ingest.text import shorten
-from .settings import REASONING_LEVELS, SettingsError, load_compaction, load_settings
+from .learner.lease import Lease, LeaseHeldError
+from .learner.records import LearnerRecords
+from .settings import REASONING_LEVELS, SESSIONS_DB, SettingsError, load_compaction, load_settings
 from .store import Database
 from .store.jobs import IngestBusyError
 from .study.console import run_console
 from .study.session import StudyOptions, StudySession
-
-SESSIONS_DB = "sessions.db"
 
 KIND_NAMES = {
     "lecture": "课件",
@@ -93,6 +93,10 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="关闭自动压缩：对话太长时直接开新对话（学习时说“压缩上下文”仍可手动压缩）",
     )
+
+    ps = sub.add_parser("serve", help="启动本机网页服务（默认只允许本机访问）")
+    ps.add_argument("--host", default="127.0.0.1", help="监听地址（默认 127.0.0.1）")
+    ps.add_argument("--port", type=int, default=8765, help="端口（默认 8765）")
     return p
 
 
@@ -217,32 +221,37 @@ async def _study(
         if args.no_auto_compact:
             compaction = dataclasses.replace(compaction, auto=False)
         tutor = gw.chain(role="tutor")[0]
-        session = await StudySession.open(
-            db,
-            gw,
-            course.id,
-            events=store,
-            options=StudyOptions(
-                mode=args.mode, level=args.level, exam_date=args.exam_date, profile=args.profile
-            ),
-            context_window=gw.model_info(tutor).context_window,
-            verify_answers=not args.no_verify,
-            compaction=compaction,
-        )
-        level = gw.reasoning.get("tutor") or "厂商默认"
-        auto = (
-            f"对话超过约 {session.compact_limit() // 1000}k token 自动压缩"
-            if compaction.auto
-            else "自动压缩已关闭"
-        )
-        out.write(
-            f"开始学习：{course.name}（讲解模型 {tutor}，思考强度 {level}；{auto}，说“压缩上下文”可随时压缩）。"
-            "输入“退出”结束，进度会自动保存。\n"
-        )
-        return await run_console(session, out, read_line, data_dir / COURSES_DIR / course.id)
+        # 同一门课同一时间只能在一个地方学（另一个命令行窗口或 examprep serve）
+        async with Lease(db, (await LearnerRecords(db).enrollment(course.id)).id):
+            session = await StudySession.open(
+                db,
+                gw,
+                course.id,
+                events=store,
+                options=StudyOptions(
+                    mode=args.mode, level=args.level, exam_date=args.exam_date, profile=args.profile
+                ),
+                context_window=gw.model_info(tutor).context_window,
+                verify_answers=not args.no_verify,
+                compaction=compaction,
+            )
+            level = gw.reasoning.get("tutor") or "厂商默认"
+            auto = (
+                f"对话超过约 {session.compact_limit() // 1000}k token 自动压缩"
+                if compaction.auto
+                else "自动压缩已关闭"
+            )
+            out.write(
+                f"开始学习：{course.name}（讲解模型 {tutor}，思考强度 {level}；{auto}，说“压缩上下文”可随时压缩）。"
+                "输入“退出”结束，进度会自动保存。\n"
+            )
+            return await run_console(session, out, read_line, data_dir / COURSES_DIR / course.id)
     except (CourseNotFoundError, SettingsError) as exc:
         sys.stderr.write(f"{exc}\n")
         return 2
+    except LeaseHeldError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 3
     finally:
         await store.close()
         if gw is not None and gateway is None:
@@ -270,4 +279,28 @@ def main(
         return asyncio.run(_search(args, data_dir, stream))
     if args.command == "study":
         return asyncio.run(_study(args, data_dir, stream, read_line or sys.stdin.readline, gateway))
+    if args.command == "serve":
+        return _serve(args, data_dir, stream)
     return asyncio.run(_courses(data_dir, stream))
+
+
+def _serve(args: argparse.Namespace, data_dir: Path, out: TextIO) -> int:
+    import uvicorn
+
+    from .server import create_app
+    from .server.security import LOOPBACK
+
+    host: str = args.host
+    if host in ("0.0.0.0", "::", ""):
+        sys.stderr.write(
+            "请指定一个具体的地址（例如 127.0.0.1 或本机局域网 IP）；服务没有登录，不要对所有网卡开放。\n"
+        )
+        return 2
+    if host not in LOOPBACK:
+        out.write(f"注意：服务没有登录鉴权，{host} 上能访问到它的人都能用你的资料和模型额度。\n")
+    shown = f"[{host}]" if ":" in host else host
+    out.write(f"ExamPrep Agent 已启动：http://{shown}:{args.port}  （接口说明 /docs，Ctrl+C 停止）\n")
+    out.flush()
+    app = create_app(data_dir, extra_hosts=(host,))
+    uvicorn.run(app, host=host, port=args.port, log_level="warning")
+    return 0
