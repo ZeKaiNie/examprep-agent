@@ -7,7 +7,7 @@
 [![CI](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeKaiNie/examprep-agent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**状态：P1 地基、P2 资料引擎、P3a 学习闭环核心（命令行）、P3b 本机服务端已完成；Web 界面开发中。**
+**状态：P1 地基、P2 资料引擎、P3 学习闭环（命令行、本机服务端、Web 界面）已完成；下一步是长期学习（FSRS 复习、错题回炉、掌握度）。**
 
 ```bash
 uv sync
@@ -16,6 +16,14 @@ uv run examprep search zh-data-structures 循环队列 判满  # 检索，带文
 export DEEPSEEK_API_KEY=sk-...                          # 或 OPENAI / ANTHROPIC / GEMINI 的 Key，或本地 Ollama
 uv run examprep study zh-data-structures               # 开始学：讲解 → 检查 → 练习 → 判分 → 小结
 uv run examprep serve                                  # 本机网页服务 http://127.0.0.1:8765（接口说明见 /docs）
+```
+
+网页界面（需要 Node 20.19+）：先构建一次，`examprep serve` 就会在同一个地址提供界面——课程列表与导入、流式讲解、点讲解里的出处在右侧打开原文并高亮那一段、进度面板与上下文压缩：
+
+```bash
+cd web && npm install && npm run build   # 构建到 packages/app/src/examprep/web/
+uv run examprep serve                    # 打开 http://127.0.0.1:8765
+# 改前端时：另开终端 cd web && npm run dev，打开 http://localhost:5173（/api 自动转给 8765）
 ```
 
 `examprep serve` 默认只允许本机访问：拒绝 Host 不是本机地址的请求，也拒绝其他网站借浏览器发来的请求。同一门课同一时间只能在一个地方学（命令行窗口或网页），另一边会提示“正在另一个窗口或网页里学习”。

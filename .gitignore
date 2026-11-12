@@ -47,3 +47,8 @@ Thumbs.db
 # 前端（P3 起）
 node_modules/
 web/dist/
+
+# Web 前端（P3c）：依赖与构建产物（npm run build 输出到 Python 包里，由 examprep serve 提供）
+web/node_modules/
+web/*.tsbuildinfo
+packages/app/src/examprep/web/
