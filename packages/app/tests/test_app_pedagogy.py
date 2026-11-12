@@ -65,6 +65,11 @@ def test_part_chars() -> None:
         ("换个讲法", "check", "confused", None),
         ("这章好了", None, "done", None),
         ("考考我", None, "quiz", None),
+        ("压缩上下文", "answer", "compact", None),  # 明确说法任何时候都识别
+        ("/compact", "check", "compact", None),
+        ("压缩", None, "compact", None),
+        ("压缩", "answer", "answer", None),  # 等作答时单说“压缩”是答案
+        ("压缩", "check", "check_answer", None),
         ("quiz me", None, "quiz", None),
         ("B", "answer", "answer", None),
         ("答案是 a b c * +", "answer", "answer", None),

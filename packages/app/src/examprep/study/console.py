@@ -9,6 +9,7 @@ from typing import TextIO
 
 from .events import (
     ChapterDone,
+    Compacted,
     CourseDone,
     FiguresShown,
     Graded,
@@ -111,6 +112,11 @@ class Console:
                 self.w(
                     f" {mark} {c.n}. {c.title}  {STATUS_NAME.get(c.status, c.status)}  "
                     f"段 {c.parts_done}/{c.parts_total}  题 {c.correct}/{c.questions}"
+                )
+        elif isinstance(ev, Compacted):
+            if ev.ok:
+                self.w(
+                    f"🗜 已压缩上下文：约 {ev.tokens_before} → {ev.tokens_after} token。保留下来的要点：\n{ev.summary}"
                 )
         elif isinstance(ev, Notice):
             prefix = {"error": "⚠️ ", "warning": "⚠️ "}.get(ev.level, "")

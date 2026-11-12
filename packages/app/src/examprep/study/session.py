@@ -19,6 +19,7 @@ from examprep_llm import (
     LLMError,
     LLMRequest,
     Message,
+    SystemMessage,
     TextBlock,
     TextDelta,
     UserMessage,
@@ -28,7 +29,7 @@ from examprep_runtime import LLMClient
 from examprep_runtime.session import MESSAGE_EVENT, EventStore, StoredEvent, message_payload, project_messages
 
 from ..agents import prompts
-from ..agents.citations import CitationMap, CitationStream, has_markers, render
+from ..agents.citations import CitationMap, CitationStream, has_markers, render, strip_markers
 from ..agents.grader import grade_answer_llm, judge_check
 from ..agents.verifier import Verification, verify
 from ..catalog import load_evidence
@@ -40,13 +41,15 @@ from ..pedagogy.intent import Awaiting, Intent, classify
 from ..pedagogy.parts import QUIZ_N, part_chars, pick_profile, split_parts
 from ..pedagogy.picker import Candidate, pick_questions
 from ..pedagogy.strategy import Strategy, days_left, strategy_for
+from ..settings import CompactionPolicy
 from ..store import Database
 from ..store import models as m
-from .context import LearnerSnapshot, learner_state, materials, system_messages, user_turn
+from .context import LearnerSnapshot, learner_state, materials, recap_text, system_messages, user_turn
 from .events import (
     ChapterDone,
     ChapterRow,
     CitationRef,
+    Compacted,
     CourseDone,
     FigureRef,
     FiguresShown,
@@ -66,8 +69,9 @@ from .events import (
     Verified,
 )
 
-SEGMENT_TOKENS = 60_000  # 一段对话（同一章）的历史上限；超过后开新段，代价是一次缓存未命中
-SEGMENT_EVENT = "segment"  # 会话事件：开始新的一段对话 {"chapter": n}
+HARD_LIMIT_RATIO = 0.9  # 关闭自动压缩时，对话占到可用空间的 90% 直接开新段，避免超出模型窗口
+# 会话事件：开始新的一段对话 {"chapter": n, "reason": chapter/compact/overflow, "summary": 压缩摘要}
+SEGMENT_EVENT = "segment"
 EVIDENCE_EVENT = "evidence"  # 会话事件：本段新编号的证据 {"ids": [...]}，恢复时按顺序重建编号表
 _STATES: tuple[State, ...] = ("TEACH", "CHECK", "PRACTICE", "SELF", "DONE")
 MAX_RETEACH = 2
@@ -179,6 +183,8 @@ class StudySession:
         timeout: float = 30.0,
         segment_chapter: int | None = None,
         cmap: CitationMap | None = None,
+        segment_summary: str = "",
+        compaction: CompactionPolicy | None = None,
     ) -> None:
         self.db = db
         self.llm = llm
@@ -190,6 +196,9 @@ class StudySession:
         self.history = history
         self.segment_chapter = segment_chapter
         self.cmap = cmap or CitationMap()
+        self.segment_summary = segment_summary  # 本段开头的压缩摘要（L6）
+        self.recap = ""  # 前几章小结，开新段时生成，段内不变
+        self.compaction = compaction or CompactionPolicy()
         self.records = LearnerRecords(db, tenant=enrollment.tenant_id, user=enrollment.user_id)
         self.context_window = context_window
         self.verify_answers = verify_answers
@@ -216,6 +225,7 @@ class StudySession:
         context_window: int = 128_000,
         verify_answers: bool = True,
         timeout: float = 30.0,
+        compaction: CompactionPolicy | None = None,
     ) -> StudySession:
         await db.create_all()
         course = await load_course(db, course_id)
@@ -232,11 +242,12 @@ class StudySession:
         history: list[Message] = []
         segment: int | None = None
         cmap = CitationMap()
+        summary = ""
         if enr.session_id is None or await events.get_session(enr.session_id) is None:
             info = await events.create_session(metadata={"course_id": course_id, "enrollment_id": enr.id})
             enr.session_id = info.id
         else:
-            segment, history, cmap = restore_segment(await events.events(enr.session_id), course)
+            segment, history, cmap, summary = restore_segment(await events.events(enr.session_id), course)
         await records.save_enrollment(enr)
         progress = await records.progress(enr.id, numbers)
         session = cls(
@@ -252,7 +263,12 @@ class StudySession:
             timeout=timeout,
             segment_chapter=segment,
             cmap=cmap,
+            segment_summary=summary,
+            compaction=compaction,
         )
+        if segment is not None:
+            # 前几章小结由数据库重建；和开段时生成的内容相同，系统消息不变，缓存前缀还在
+            session.recap = await session._recap(segment)
         for n, parts in session.parts.items():
             row = progress[n]
             if row.parts_total != len(parts):
@@ -337,6 +353,9 @@ class StudySession:
         kind = intent.kind
         if kind == "progress":
             yield await self._progress_report()
+        elif kind == "compact":
+            async for ev in self.compact():
+                yield ev
         elif kind == "goto":
             async for ev in self._goto(intent.chapter or self.chapter):
                 yield ev
@@ -846,7 +865,8 @@ class StudySession:
         if not hits:
             msg = prompts.refusal(self.course.language)
             yield Refused(query=text, text=msg)
-            await self._ensure_segment()
+            async for ev in self._prepare_segment():
+                yield ev
             await self._log(
                 UserMessage(content=[TextBlock(text=text)]), AssistantMessage(content=[TextBlock(text=msg)])
             )
@@ -961,7 +981,8 @@ class StudySession:
     ) -> AsyncIterator[StudyEvent]:
         turn = out if out is not None else _Turn()
         lang = self.course.language
-        await self._ensure_segment()
+        async for ev in self._prepare_segment():
+            yield ev
         cmap = self.cmap.copy()  # 本轮成功后才提交新编号
         mats = materials(chunks, cmap, budget=self.evidence_budget, language=lang)
         row = self.progress[self.chapter]
@@ -977,9 +998,7 @@ class StudySession:
             ],
             open_mistakes=len(await self.records.open_mistakes(self.enr.id)),
         )
-        system = system_messages(
-            lang, self.course.name, self.course.chapters, chapter=self.chapter, budget=self.system_budget
-        )
+        system = self._system()
         user_text = user_turn(lang, student, task, mats.text, extra, state=learner_state(lang, snap))
         prompt = UserMessage(content=[TextBlock(text=user_text)])
         request = LLMRequest(messages=[*system, *self.history, prompt])
@@ -1044,22 +1063,137 @@ class StudySession:
             await self._event(EVIDENCE_EVENT, {"ids": mats.new_ids})
         await self._log(prompt, AssistantMessage(content=[TextBlock(text=raw_text)]))
 
-    # ------------------------------------------------------------ 对话分段（缓存前缀）
+    # ------------------------------------------------------------ 对话分段与压缩（缓存前缀）
 
-    def _segment_limit(self) -> int:
-        return min(int(self.context_window * 0.5), SEGMENT_TOKENS)
+    def _system(self) -> list[SystemMessage]:
+        return system_messages(
+            self.course.language,
+            self.course.name,
+            self.course.chapters,
+            chapter=self.chapter,
+            budget=self.system_budget,
+            recap=self.recap,
+            summary=self.segment_summary,
+        )
 
-    async def _ensure_segment(self) -> None:
-        """换章或本段太长时开新段：系统消息变化或历史太长，前缀反正保不住，从头开始只追加。"""
-        if (
-            self.segment_chapter == self.chapter
-            and estimate_tokens(_history_text(self.history)) < self._segment_limit()
-        ):
+    def segment_tokens(self) -> int:
+        """本段对话（摘要 + 历史）的估算 token 数；前端可以显示“上下文已用多少”。"""
+        return estimate_tokens(self.segment_summary) + estimate_tokens(_history_text(self.history))
+
+    def compact_limit(self) -> int:
+        """本段对话超过这个 token 数就压缩（自动压缩关闭时开新段）。
+
+        阈值按用户设置（窗口 × ratio 与 max_tokens 取小），同时给系统消息和本轮资料留出位置，
+        小窗口的本地模型也不会超出窗口。
+        """
+        room = self.context_window - self.evidence_budget - self.system_budget
+        if self.compaction.auto:
+            return max(2_000, min(self.compaction.threshold(self.context_window), room))
+        return max(2_000, int(room * HARD_LIMIT_RATIO))
+
+    async def _prepare_segment(self) -> AsyncIterator[StudyEvent]:
+        """每次调用 Tutor 前：换章开新段；本段太长时自动压缩（或在关闭自动压缩时开新段）。"""
+        if self.segment_chapter != self.chapter:
+            await self._new_segment("chapter")
             return
+        if self.segment_tokens() < self.compact_limit():
+            return
+        if self.compaction.auto:
+            async for ev in self._compact(manual=False):
+                yield ev
+            return
+        await self._new_segment("overflow")
+        yield Notice(
+            level="warning",
+            text=self._t(
+                "对话太长，已开新对话（自动压缩已关闭）。学习进度、错题和小结都在，不受影响。",
+                "The conversation got too long and was restarted (auto compaction is off). Progress is kept.",
+            ),
+        )
+
+    async def _new_segment(self, reason: str, summary: str = "") -> None:
+        if self.segment_chapter != self.chapter:
+            self.recap = await self._recap(self.chapter)
         self.segment_chapter = self.chapter
+        self.segment_summary = summary
         self.history = []
         self.cmap = CitationMap()
-        await self._event(SEGMENT_EVENT, {"chapter": self.chapter})
+        await self._event(SEGMENT_EVENT, {"chapter": self.chapter, "reason": reason, "summary": summary})
+
+    async def _recap(self, chapter: int) -> str:
+        """前几章（章号小于 chapter）的最新小结。"""
+        latest: dict[int, str] = {}
+        for note in await self.records.notes(self.enr.id, type="summary"):
+            if note.chapter_n is not None and note.chapter_n < chapter:
+                latest[note.chapter_n] = note.text
+        rows = [(n, self.course.title(n), latest[n]) for n in sorted(latest)]
+        return recap_text(self.course.language, rows)
+
+    async def compact(self) -> AsyncIterator[StudyEvent]:
+        """手动压缩：学生说“压缩上下文”，或前端的压缩按钮。"""
+        if self.segment_chapter != self.chapter or len(self.history) < 2:
+            yield Notice(text=self._t("现在的对话还很短，不需要压缩。", "The conversation is still short."))
+            return
+        async for ev in self._compact(manual=True):
+            yield ev
+
+    async def _compact(self, *, manual: bool) -> AsyncIterator[StudyEvent]:
+        """把本段对话换成摘要。
+
+        摘要请求 = 上一次 Tutor 请求的前缀（系统消息 + 历史原文）+ 末尾一条压缩指令，
+        同一个模型、同样的前缀，能复用已经缓存的部分（参考 deepseek-harness 的压缩设计）；
+        另起一个“摘要器”系统提示会让整段前缀失效。
+        """
+        before = self.segment_tokens()
+        lang = self.course.language
+        yield Notice(
+            text=self._t("正在压缩上下文…", "Compacting the conversation…")
+            if manual
+            else self._t("对话较长，正在自动压缩上下文…", "The conversation is long; compacting…")
+        )
+        instruction = UserMessage(content=[TextBlock(text=prompts.compact(lang))])
+        request = LLMRequest(messages=[*self._system(), *self.history, instruction])
+        summary = ""
+        for _attempt in range(EMPTY_RETRIES + 1):
+            parts: list[str] = []
+            try:
+                async for ev in self.llm.stream(request, role="tutor", cancel=self.cancel):
+                    if isinstance(ev, TextDelta):
+                        parts.append(ev.text)
+            except LLMError:
+                break
+            summary = strip_markers("".join(parts)).strip()
+            if summary:
+                break
+        if summary:
+            await self._new_segment("compact", summary)
+            yield Compacted(
+                manual=manual,
+                ok=True,
+                tokens_before=before,
+                tokens_after=estimate_tokens(summary),
+                summary=summary,
+            )
+            return
+        if manual:  # 手动压缩失败：保留原对话，不丢任何东西
+            yield Compacted(manual=True, ok=False, tokens_before=before, tokens_after=before, summary="")
+            yield Notice(
+                level="warning",
+                text=self._t(
+                    "压缩没有完成，对话保持原样，可以稍后再试。", "Compaction failed; nothing changed."
+                ),
+            )
+            return
+        # 自动压缩失败：对话已经太长，只能开新段
+        await self._new_segment("overflow")
+        yield Compacted(manual=False, ok=False, tokens_before=before, tokens_after=0, summary="")
+        yield Notice(
+            level="warning",
+            text=self._t(
+                "压缩没有完成，已开新对话。学习进度、错题和小结都在，不受影响。",
+                "Compaction failed; started a new conversation. Progress is kept.",
+            ),
+        )
 
     async def _event(self, type: str, payload: dict[str, Any]) -> None:
         if self.enr.session_id is not None:
@@ -1090,15 +1224,17 @@ def _history_text(history: Sequence[Message]) -> str:
 
 def restore_segment(
     events: Sequence[StoredEvent], course: CourseData
-) -> tuple[int | None, list[Message], CitationMap]:
-    """从会话事件恢复最后一段对话：最后一个 segment 事件之后的消息与证据编号。
+) -> tuple[int | None, list[Message], CitationMap, str]:
+    """从会话事件恢复最后一段对话：所属章、消息、证据编号、段首的压缩摘要。
 
     没有 segment 事件（旧版本的会话）时返回空段，下一轮从新段开始。
     """
+    empty: tuple[int | None, list[Message], CitationMap, str] = (None, [], CitationMap(), "")
     start = max((i for i, e in enumerate(events) if e.type == SEGMENT_EVENT), default=None)
     if start is None:
-        return None, [], CitationMap()
+        return empty
     chapter = events[start].payload.get("chapter")
+    summary = events[start].payload.get("summary")
     by_id = {c.id: c for c in course.index.chunks}
     cmap = CitationMap()
     tail = events[start + 1 :]
@@ -1109,9 +1245,14 @@ def restore_segment(
                 chunk = by_id.get(str(eid))  # pyright: ignore[reportUnknownArgumentType]
                 if chunk is None:
                     # 资料重新导入后证据变了：历史里的编号对不上，丢弃这段，下一轮开新段
-                    return None, [], CitationMap()
+                    return empty
                 cmap.add(chunk)
-    return (chapter if isinstance(chapter, int) else None), project_messages(tail), cmap
+    return (
+        chapter if isinstance(chapter, int) else None,
+        project_messages(tail),
+        cmap,
+        summary if isinstance(summary, str) else "",
+    )
 
 
 async def verify_text(

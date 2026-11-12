@@ -15,6 +15,7 @@ class Brain:
         self.calls: list[str] = []
         self.prompts: list[tuple[str, str]] = []  # (Tutor 动作, 最后一条用户消息)
         self.empty_next = 0  # 接下来几次 Tutor 调用返回空正文
+        self.fail_compact = False  # 压缩请求返回空正文
         self.fail_grader_on: set[str] = set()
 
     def __call__(self, req: LLMRequest) -> FakeTurn | LLMError:
@@ -62,6 +63,12 @@ class Brain:
                     )
                 ]
             )
+        if user.startswith("暂停讲课"):  # 压缩指令
+            self.calls.append("compact")
+            self.prompts.append(("compact", user))
+            if self.fail_compact:
+                return FakeTurn(text="")
+            return FakeTurn(text="摘要：讲过线性表的定义，用过排队的例子 [[E1]]；学生问过插入为什么慢。")
         task = user.split("## 本轮任务")[-1]
         if "换一种讲法" in task:
             kind, text = "reteach", "换个讲法：线性表就像排队 [[E1]]。"

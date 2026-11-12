@@ -149,6 +149,29 @@ def wrapup(language: str, chapter: int, title: str) -> str:
     )
 
 
+COMPACT_ZH = """暂停讲课。上面这段对话要压缩：之后你只能看到现在写的摘要，看不到上面的原文。写一份摘要，供你自己接着教这个学生用：
+1. 已经讲过的内容：按段写要点，以及用过的例子（以后换讲法时不要重复同一个例子）；
+2. 学生问过的问题、没懂的地方、答错的检查题，以及后来用什么讲法讲懂的；
+3. 学生表现出来的偏好，例如喜欢先看例子、要求讲慢一点；
+4. 还没有结束的事：正在等学生回答的问题、答应过要讲的内容。
+系统消息里如果已经有之前的对话摘要，把它合并进来，不要丢掉。
+只写对话里确实发生过的事，不要补充新知识；不要写引用标记、文件名或页码；不超过 600 字；只输出摘要本身，不要开场白。"""
+
+COMPACT_EN = """Pause teaching. The conversation above is being compacted: from now on you will only see the summary you
+write now, not the text above. Write a summary you can use to keep teaching this student:
+1. What has been taught: key points per part, and the examples used (do not reuse them when re-explaining);
+2. Questions the student asked, what they did not understand, check questions they got wrong, and what finally worked;
+3. Preferences the student showed, e.g. examples first, slower pace;
+4. Unfinished business: a question awaiting the student's answer, anything you promised to cover.
+If the system message already has an earlier summary, merge it in; do not drop it.
+Only record what actually happened; add no new knowledge; no markers, file names or page numbers; at most 400 words;
+output only the summary, no preamble."""
+
+
+def compact(language: str) -> str:
+    return COMPACT_ZH if language == "zh" else COMPACT_EN
+
+
 REFUSAL_ZH = "资料里没有讲到这一点。"
 REFUSAL_EN = "The materials do not cover this."
 

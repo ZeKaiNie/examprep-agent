@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 import json
 import os
 import sys
@@ -20,7 +21,7 @@ from .ingest import guard
 from .ingest.events import FileDone, FileFailed, IngestEvent, IngestReport
 from .ingest.pipeline import COURSES_DIR, ingest
 from .ingest.text import shorten
-from .settings import REASONING_LEVELS, SettingsError, load_settings
+from .settings import REASONING_LEVELS, SettingsError, load_compaction, load_settings
 from .store import Database
 from .store.jobs import IngestBusyError
 from .study.console import run_console
@@ -86,6 +87,11 @@ def _parser() -> argparse.ArgumentParser:
         choices=list(REASONING_LEVELS),
         default=None,
         help="讲解的思考强度（默认 high；关掉更快更省，但例子更容易算错）",
+    )
+    pt.add_argument(
+        "--no-auto-compact",
+        action="store_true",
+        help="关闭自动压缩：对话太长时直接开新对话（学习时说“压缩上下文”仍可手动压缩）",
     )
     return p
 
@@ -207,6 +213,9 @@ async def _study(
             gw = Gateway.from_config(load_settings(data_dir))
         if args.reasoning is not None:
             gw.reasoning["tutor"] = args.reasoning
+        compaction = load_compaction(data_dir)
+        if args.no_auto_compact:
+            compaction = dataclasses.replace(compaction, auto=False)
         tutor = gw.chain(role="tutor")[0]
         session = await StudySession.open(
             db,
@@ -218,10 +227,17 @@ async def _study(
             ),
             context_window=gw.model_info(tutor).context_window,
             verify_answers=not args.no_verify,
+            compaction=compaction,
         )
         level = gw.reasoning.get("tutor") or "厂商默认"
+        auto = (
+            f"对话超过约 {session.compact_limit() // 1000}k token 自动压缩"
+            if compaction.auto
+            else "自动压缩已关闭"
+        )
         out.write(
-            f"开始学习：{course.name}（讲解模型 {tutor}，思考强度 {level}）。输入“退出”结束，进度会自动保存。\n"
+            f"开始学习：{course.name}（讲解模型 {tutor}，思考强度 {level}；{auto}，说“压缩上下文”可随时压缩）。"
+            "输入“退出”结束，进度会自动保存。\n"
         )
         return await run_console(session, out, read_line, data_dir / COURSES_DIR / course.id)
     except (CourseNotFoundError, SettingsError) as exc:

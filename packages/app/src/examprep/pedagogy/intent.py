@@ -21,6 +21,7 @@ IntentKind = Literal[
     "confused",  # 没懂
     "done",  # 本章结束
     "ask",  # 自由提问
+    "compact",  # 压缩上下文
 ]
 Awaiting = Literal["answer", "check"] | None
 
@@ -57,12 +58,16 @@ _CONFUSED = _rx(
 )
 _DONE = _rx(r"这章好了|本章结束|这章结束|下一章|学完了|next chapter|done with (?:this|the) chapter|done")
 _QUIZ = _rx(r"考考我|考我|出题|出道题|做题|练习|练一练|quiz(?: me)?|test me")
+# 明确的说法任何状态下都识别；单说“压缩”可能是在答题（例如“哈夫曼编码用来做什么”），只在不等作答时识别
+_COMPACT = _rx(r"压缩上下文|压缩对话|压缩一下上下文|/compact|compact(?: the)? (?:context|conversation)")
+_COMPACT_SHORT = _rx(r"压缩|压缩一下|compact")
 _CONTINUE = _rx(
     r"继续|好|好的|行|可以|ok|okay|嗯|嗯嗯|下一段|接着讲|继续讲|往下讲|然后呢|next|go on|continue|go"
 )
 # 明确指令，按优先级排列；任何状态下都先识别
 _COMMANDS: tuple[tuple[IntentKind, re.Pattern[str]], ...] = (
     ("progress", _PROGRESS),
+    ("compact", _COMPACT),
     ("hint", _HINT),
     ("confused", _CONFUSED),
     ("done", _DONE),
@@ -98,6 +103,8 @@ def classify(text: str, *, awaiting: Awaiting = None) -> Intent:
         if _CONTINUE.match(s):
             return Intent("continue", s)  # 不答检查题直接继续
         return Intent("check_answer", s)
+    if _COMPACT_SHORT.match(s):
+        return Intent("compact", s)
     if _CONTINUE.match(s):
         return Intent("continue", s)
     if _QUESTION_MARK.search(s) or _QUESTION_WORDS.search(s):

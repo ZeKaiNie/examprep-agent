@@ -22,6 +22,8 @@ uv run examprep study zh-data-structures               # 开始学：讲解 → 
 
 讲解、判分、核对默认都开启模型的思考模式（`high`），因为讲解里的例子要算对、判分要准。想更快、更省，可以在数据目录的 `config.toml` 里用 `[reasoning]` 按角色调整（`off` / `low` / `medium` / `high`），或者只调这一次学习的讲解：`uv run examprep study zh-data-structures --reasoning low`。
 
+对话太长时会自动压缩上下文（默认开启，超过模型窗口的 70% 或 6 万 token 时触发），学习时说“压缩上下文”也能随时手动压缩；学习进度、错题和小结存在数据库里，压缩不会丢。在 `config.toml` 的 `[compaction]` 里可以调整阈值或关闭自动压缩，也可以用 `--no-auto-compact` 只关这一次。
+
 ExamPrep Agent 从 [Exam Cram Coach Skill](https://github.com/ZeKaiNie/universal-examprep-skill) 演进而来，是一个独立的开源学习 Agent。
 
 ## 它要做什么

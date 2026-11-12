@@ -11,7 +11,7 @@ from conftest import SAMPLES
 from fakes import Brain
 
 from examprep import cli
-from examprep.settings import SettingsError, load_settings
+from examprep.settings import CompactionPolicy, SettingsError, load_compaction, load_settings
 from examprep_llm import Gateway
 from examprep_llm.testing import FakeClock, FakeProvider
 
@@ -41,6 +41,26 @@ def test_config_file(tmp_path: Path) -> None:
     assert cfg.roles == {"tutor": ["myvllm/qwen"], "grader": ["myvllm/small"], "verifier": ["myvllm/qwen"]}
     assert cfg.providers["myvllm"]["base_url"] == "http://gpu:8000/v1"
     assert cfg.reasoning["tutor"] == "high"
+    assert load_compaction(tmp_path) == CompactionPolicy()  # 默认开启自动压缩
+    (tmp_path / "config.toml").write_text(
+        '[roles]\ntutor = ["deepseek/deepseek-flash"]\n[compaction]\nauto = false\nratio = 0.5\nmax_tokens = 30000\n',
+        encoding="utf-8",
+    )
+    assert load_compaction(tmp_path) == CompactionPolicy(auto=False, ratio=0.5, max_tokens=30_000)
+    assert load_settings(tmp_path, {}).roles["tutor"] == [
+        "deepseek/deepseek-flash"
+    ]  # [compaction] 不进网关配置
+    for bad, msg in (
+        ("auto = 1", "true 或 false"),
+        ("ratio = 2.0", "ratio"),
+        ("speed = 1", "不认识"),
+    ):
+        (tmp_path / "config.toml").write_text(f"[compaction]\n{bad}\n", encoding="utf-8")
+        with pytest.raises(SettingsError, match=msg):
+            load_compaction(tmp_path)
+    (tmp_path / "config.toml").write_text('compaction = "on"\n', encoding="utf-8")
+    with pytest.raises(SettingsError, match="必须是一个表"):
+        load_compaction(tmp_path)
     (tmp_path / "config.toml").write_text(
         '[roles]\ntutor = ["deepseek/deepseek-flash"]\n[reasoning]\ntutor = "low"\n', encoding="utf-8"
     )
@@ -92,7 +112,7 @@ def test_study_session_end_to_end(data: Path) -> None:
         ["--data-dir", str(data), "study", "数据结构", "--mode", "longterm"],
         out=out,
         read_line=scripted(
-            "继续", "懂了，后进先出", "继续", "B", "看答案", "量子纠缠是什么？", "进度", "退出"
+            "继续", "懂了，后进先出", "继续", "B", "看答案", "量子纠缠是什么？", "压缩上下文", "进度", "退出"
         ),  # type: ignore[arg-type]
         gateway=fake_gateway(),
     )
@@ -109,6 +129,7 @@ def test_study_session_end_to_end(data: Path) -> None:
     assert "参考答案（期末模拟卷.txt p.1）" in text
     assert "🏁 第 1 章完成：已验证" in text
     assert "资料里没有讲到这一点。" in text
+    assert "🗜 已压缩上下文" in text  # 命令行里手动压缩
     assert "下一步：" in text
     assert "进度已保存" in text
 
@@ -116,13 +137,24 @@ def test_study_session_end_to_end(data: Path) -> None:
     out2 = io.StringIO()
     gw = fake_gateway()
     cli.main(
-        ["--data-dir", str(data), "study", "数据结构", "--no-verify", "--reasoning", "off"],
+        [
+            "--data-dir",
+            str(data),
+            "study",
+            "数据结构",
+            "--no-verify",
+            "--reasoning",
+            "off",
+            "--no-auto-compact",
+        ],
         out=out2,
         read_line=scripted("继续"),  # type: ignore[arg-type]
         gateway=gw,
     )
     assert "→ 2. 栈和队列" in out2.getvalue()
     assert "思考强度 off" in out2.getvalue()
+    assert "自动压缩" in text  # 第一次：默认开启，显示阈值
+    assert "k token 自动压缩" in text
     fake = gw.providers["fake"]
     assert isinstance(fake, FakeProvider)
     assert {r.reasoning for r in fake.requests if not r.tools} == {"off"}

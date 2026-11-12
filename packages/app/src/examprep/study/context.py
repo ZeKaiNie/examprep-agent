@@ -3,8 +3,9 @@
 提供方的 prompt cache 按请求开头的 token 序列匹配（DeepSeek 要求完整匹配上一次请求的输入或输出结尾），
 所以 Tutor 的请求结构是“不变前缀 + 只追加的对话”：
 
-- 系统消息只放同一章内逐字节不变的层（L0 策略、L2 课程目录）；
+- 系统消息只放一段对话内逐字节不变的层（L0 策略、L2 课程目录、前几章小结、压缩摘要 L6）；
 - 对话按章分段，段内只追加，发出去的用户消息和模型原样输出都原样留在历史里，不改写、不滑动；
+  一段太长时压缩：摘要进新段的系统消息，原文丢弃；
 - 证据编号在段内共用，已经给过的资料不再重发；
 - 会变的学习者状态（L3）、本轮任务（L4）和新证据（L5）只出现在最后一条用户消息里。
 
@@ -14,6 +15,7 @@ Tutor 的缓存命中率约 11%。
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -46,8 +48,13 @@ def system_messages(
     *,
     chapter: int,
     budget: int,
+    recap: str = "",
+    summary: str = "",
 ) -> list[SystemMessage]:
-    """L0 + L2。同一章内逐字节不变（当前位置写在用户消息里），以命中 prompt cache。"""
+    """L0 + L2 + 前几章小结 + 本段之前对话的摘要（L6）。
+
+    这些内容只在开新段时变化，同一段对话内逐字节不变（当前位置写在用户消息里），以命中 prompt cache。
+    """
     zh = language == "zh"
     nearby = [(n, t) for n, t in toc if abs(n - chapter) <= TOC_RADIUS]
     lines = [f"{'课程' if zh else 'Course'}：{course}", "目录：" if zh else "Contents:"]
@@ -62,7 +69,40 @@ def system_messages(
         ),
         ContextSection(name="L2", content="\n".join(lines), priority=80, cacheable=True, budget=800),
     ]
+    if recap:
+        head = (
+            "## 前面几章的小结（学生已经学过）\n"
+            if zh
+            else "## Summaries of earlier chapters (already learned)\n"
+        )
+        sections.append(
+            ContextSection(name="L2b", content=head + recap, priority=60, cacheable=True, budget=1500)
+        )
+    if summary:
+        head = (
+            "## 这一章前面对话的摘要（原文已压缩，接着这里往下教）\n"
+            if zh
+            else "## Summary of the earlier conversation in this chapter (compacted; continue from here)\n"
+        )
+        sections.append(
+            ContextSection(name="L6", content=head + summary, priority=70, cacheable=True, budget=1500)
+        )
     return ContextAssembler(budget).assemble(sections).to_system_messages()
+
+
+# 渲染后的出处“（第1章_线性表.md p.1；lec2.pdf p.3）”
+_RENDERED_CITE = re.compile(r"（[^（）\n]*?\bp\.\d+）")
+RECAP_CHAPTERS = 5
+
+
+def recap_text(language: str, chapters: Sequence[tuple[int, str, str]]) -> str:
+    """前几章的小结（章号, 标题, 小结），只取最近 RECAP_CHAPTERS 章；去掉渲染好的出处，避免模型照抄页码。"""
+    zh = language == "zh"
+    out: list[str] = []
+    for n, title, text in list(chapters)[-RECAP_CHAPTERS:]:
+        body = _RENDERED_CITE.sub("", text).strip()
+        out.append((f"第 {n} 章《{title}》\n" if zh else f"Chapter {n} ({title})\n") + body)
+    return "\n\n".join(out)
 
 
 def learner_state(language: str, snap: LearnerSnapshot) -> str:

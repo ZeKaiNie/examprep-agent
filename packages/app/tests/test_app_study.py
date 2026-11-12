@@ -14,9 +14,11 @@ from fakes import Brain
 
 from examprep.ingest.pipeline import ingest
 from examprep.learner.records import LearnerRecords
+from examprep.settings import CompactionPolicy
 from examprep.store import Database
 from examprep.study.events import (
     ChapterDone,
+    Compacted,
     CourseDone,
     Graded,
     NoteSaved,
@@ -58,9 +60,21 @@ async def env(tmp_path: Path) -> AsyncIterator[dict[str, Any]]:
     await db.close()
 
 
-async def open_session(env: dict[str, Any], **opts: Any) -> StudySession:
+async def open_session(
+    env: dict[str, Any],
+    *,
+    compaction: CompactionPolicy | None = None,
+    context_window: int = 128_000,
+    **opts: Any,
+) -> StudySession:
     return await StudySession.open(
-        env["db"], env["gw"], env["course"], events=env["store"], options=StudyOptions(**opts)
+        env["db"],
+        env["gw"],
+        env["course"],
+        events=env["store"],
+        options=StudyOptions(**opts),
+        compaction=compaction,
+        context_window=context_window,
     )
 
 
@@ -253,16 +267,125 @@ async def test_new_chapter_starts_a_new_segment_and_resume_restores_labels(env: 
     assert [s2.cmap.resolve(lb) for lb in labels] == [s.cmap.resolve(lb) for lb in labels]
 
 
-async def test_long_segment_starts_over(env: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
-    import examprep.study.session as session_mod
+def _system_text(request: LLMRequest) -> str:
+    return "\n".join(m.content for m in request.messages if isinstance(m, SystemMessage))
 
-    monkeypatch.setattr(session_mod, "SEGMENT_TOKENS", 1)  # 每轮都超过上限
+
+async def test_auto_compaction_reuses_prefix_and_carries_summary(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await open_session(env)
+    await say(s, "继续")  # 讲解 + 检查题，本段有 4 条消息
+    assert len(s.history) == 4
+    await say(s, "顺序表要移动元素")  # 回答检查题（Grader，不进 Tutor 对话）
+    monkeypatch.setattr(s, "compact_limit", lambda: 1)  # 下一次调用 Tutor 前就超过阈值
+    ev = await say(s, "顺序表插入为什么慢？")
+    done = of(ev, Compacted)[0]
+    assert (done.manual, done.ok) == (False, True)
+    assert done.summary.startswith("摘要：讲过线性表的定义")
+    assert "[[" not in done.summary  # 摘要里的引用标记去掉
+    assert done.tokens_after < done.tokens_before
+
+    # 压缩请求 = 上一次 Tutor 请求 + 模型输出 + 末尾一条压缩指令：前缀完全相同，能命中缓存
+    reqs = _tutor_requests(env)
+    k = next(i for i, r in enumerate(reqs) if _last_user(r).startswith("暂停讲课"))
+    prev, comp = reqs[k - 1], reqs[k]
+    assert comp.messages[: len(prev.messages)] == prev.messages
+    assert len(comp.messages) == len(prev.messages) + 2
+    # 压缩后的新段：摘要进系统消息，历史从空开始，本轮照常回答
+    nxt = reqs[k + 1]
+    assert "这一章前面对话的摘要" in _system_text(nxt)
+    assert "讲过线性表的定义" in _system_text(nxt)
+    assert not any(isinstance(m, AssistantMessage) for m in nxt.messages)
+    assert of(ev, TutorMessage)[0].kind == "answer"
+    assert len(s.history) == 2
+
+    # 断点恢复：摘要随段一起恢复，系统消息与压缩后完全相同
+    s2 = await open_session(env)
+    assert s2.segment_summary == s.segment_summary
+    assert s2._system() == s._system()  # pyright: ignore[reportPrivateUsage]
+    events = await env["store"].events(s.enr.session_id)
+    assert [e.payload["reason"] for e in events if e.type == "segment"] == ["chapter", "compact"]
+
+
+async def test_manual_compaction(env: dict[str, Any]) -> None:
+    s = await open_session(env)
+    ev = await say(s, "压缩上下文")
+    assert "还很短" in of(ev, Notice)[0].text
+    await say(s, "继续")
+    assert s.state == "CHECK"
+    ev = await say(s, "压缩")  # 等回答检查题时，单说“压缩”算作回答
+    assert of(ev, Compacted) == []
+    await say(s, "顺序表插入为什么慢？")
+    ev = await say(s, "压缩上下文")
+    done = of(ev, Compacted)[0]
+    assert (done.manual, done.ok) == (True, True)
+    assert s.history == []
+    assert s.segment_summary == done.summary
+
+    # 手动压缩失败：对话保持原样
+    await say(s, "链表呢？")
+    history = list(s.history)
+    env["brain"].fail_compact = True
+    ev = await say(s, "/compact")
+    assert of(ev, Compacted)[0].ok is False
+    assert s.history == history
+
+
+async def test_compaction_failure_or_disabled_starts_a_new_segment(
+    env: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
     s = await open_session(env)
     await say(s, "继续")
-    await say(s, "顺序表插入为什么慢？")
+    await say(s, "顺序表要移动元素")
+    monkeypatch.setattr(s, "compact_limit", lambda: 1)
+    env["brain"].fail_compact = True
+    ev = await say(s, "顺序表插入为什么慢？")
+    assert of(ev, Compacted)[0].ok is False
+    assert "已开新对话" in of(ev, Notice)[-1].text
     assert len(s.history) == 2  # 只剩本轮
-    events = await env["store"].events(s.enr.session_id)
-    assert sum(1 for e in events if e.type == "segment") >= 2
+
+    # 关闭自动压缩：不发压缩请求，直接开新段
+    s2 = await open_session(env, compaction=CompactionPolicy(auto=False))
+    monkeypatch.setattr(s2, "compact_limit", lambda: 1)
+    calls = env["brain"].calls.count("compact")
+    ev = await say(s2, "链表插入为什么快？")
+    assert env["brain"].calls.count("compact") == calls
+    assert "自动压缩已关闭" in of(ev, Notice)[0].text
+    assert len(s2.history) == 2
+
+
+def test_compact_limit_respects_window_and_policy() -> None:
+    p = CompactionPolicy()
+    assert p.threshold(1_048_576) == 60_000  # 大窗口：绝对上限先到
+    assert p.threshold(32_000) == 22_400  # 小窗口：70%
+    with pytest.raises(ValueError, match="ratio"):
+        CompactionPolicy(ratio=1.0)
+    with pytest.raises(ValueError, match="max_tokens"):
+        CompactionPolicy(max_tokens=10)
+
+
+async def test_compact_limit_leaves_room_for_materials(env: dict[str, Any]) -> None:
+    s = await open_session(env, context_window=32_000)
+    assert s.compact_limit() <= 32_000 - s.evidence_budget - s.system_budget
+    big = await open_session(env, context_window=1_048_576)
+    assert big.compact_limit() == 60_000
+    off = await open_session(env, context_window=1_048_576, compaction=CompactionPolicy(auto=False))
+    assert off.compact_limit() > 60_000
+
+
+async def test_new_chapter_gets_earlier_chapter_summaries(env: dict[str, Any]) -> None:
+    s = await open_session(env)
+    await say(s, "继续")
+    await say(s, "这章好了")  # 第 1 章小结，进入第 2 章
+    assert s.chapter == 2
+    await say(s, "继续")
+    first = next(r for r in _tutor_requests(env) if "第 2 章" in _last_user(r))
+    system = _system_text(first)
+    assert "前面几章的小结" in system
+    assert "第 1 章《线性表》" in system
+    assert "要点一" in system
+    assert "p.1" not in system  # 渲染好的出处去掉，模型不会照抄页码
 
 
 async def test_segment_is_dropped_when_evidence_changed(env: dict[str, Any]) -> None:
@@ -271,8 +394,8 @@ async def test_segment_is_dropped_when_evidence_changed(env: dict[str, Any]) -> 
     assert s.history
     events = await env["store"].events(s.enr.session_id)
     s.course.index.chunks.pop(0)  # 模拟重新导入后证据 id 变了
-    chapter, history, cmap = restore_segment(events, s.course)
-    assert (chapter, history, len(cmap)) == (None, [], 0)
+    chapter, history, cmap, summary = restore_segment(events, s.course)
+    assert (chapter, history, len(cmap), summary) == (None, [], 0, "")
 
 
 async def test_empty_tutor_reply_is_retried_once(env: dict[str, Any]) -> None:

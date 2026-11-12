@@ -132,6 +132,17 @@ class ProgressReport(_E):
     open_mistakes: int
 
 
+class Compacted(_E):
+    """上下文压缩：之前的对话换成摘要（ok=False 表示摘要失败，直接开了新对话）。"""
+
+    type: Literal["compacted"] = "compacted"
+    manual: bool
+    ok: bool
+    tokens_before: int
+    tokens_after: int
+    summary: str
+
+
 class Suggestions(_E):
     type: Literal["suggestions"] = "suggestions"
     items: list[str]
@@ -156,6 +167,7 @@ StudyEvent = Annotated[
     | ChapterDone
     | CourseDone
     | ProgressReport
+    | Compacted
     | Suggestions
     | Notice,
     Field(discriminator="type"),
