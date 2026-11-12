@@ -134,9 +134,12 @@ def answer_question(language: str, question: str) -> str:
     return _t(
         language,
         f"学生提问：{question}\n只依据下面的资料回答，每句带引用。资料不足以回答时，第一句写“资料里没有讲到这一点。”，"
-        "之后可以加一段以 🟡 开头的补充。",
+        "之后可以加一段以 🟡 开头的补充。学生问的如果是这段对话里发生过的事（例如刚才举的例子、上一题怎么讲的），"
+        "就根据对话和对话摘要回答，不用写“资料里没有讲到这一点”。",
         f"The student asks: {question}\nAnswer only from the materials below, with a marker on every sentence. If they "
-        'are not enough, start with "The materials do not cover this." and you may add a short note starting with 🟡.',
+        'are not enough, start with "The materials do not cover this." and you may add a short note starting with 🟡. '
+        "If the question is about this conversation itself (an example you gave, how a question was explained), answer "
+        "from the conversation and its summary without that opening sentence.",
     )
 
 

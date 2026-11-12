@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from examprep_llm import LLMError, LLMRequest, ServerError, SystemMessage, UserMessage
+from examprep_llm import BadRequestError, LLMError, LLMRequest, ServerError, SystemMessage, UserMessage
 from examprep_llm.testing import FakeTurn
 
 
@@ -16,6 +16,7 @@ class Brain:
         self.prompts: list[tuple[str, str]] = []  # (Tutor 动作, 最后一条用户消息)
         self.empty_next = 0  # 接下来几次 Tutor 调用返回空正文
         self.fail_compact = False  # 压缩请求返回空正文
+        self.fail_verify = 0  # 接下来几次核对请求失败
         self.fail_grader_on: set[str] = set()
 
     def __call__(self, req: LLMRequest) -> FakeTurn | LLMError:
@@ -24,6 +25,9 @@ class Brain:
         if any(t.name == "submit_result" for t in req.tools):
             if "核对员" in system:
                 self.calls.append("verify")
+                if self.fail_verify > 0:
+                    self.fail_verify -= 1
+                    return BadRequestError("verifier down")  # 不重试的错误，便于计数
                 items = re.findall(r"^(\d+)\. (.*)$", user, re.M)
                 verdicts = [
                     {"index": int(i), "verdict": "unsupported" if "编造" in s else "supported"}

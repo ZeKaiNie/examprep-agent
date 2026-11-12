@@ -388,6 +388,33 @@ async def test_new_chapter_gets_earlier_chapter_summaries(env: dict[str, Any]) -
     assert "p.1" not in system  # 渲染好的出处去掉，模型不会照抄页码
 
 
+async def test_verifier_failure_is_retried_then_reported(env: dict[str, Any]) -> None:
+    brain = env["brain"]
+    s = await open_session(env)
+    brain.fail_verify = 1  # 第一次失败，重试成功
+    ev = await say(s, "循环队列怎么判满？")
+    assert of(ev, Verified)
+    assert not [n for n in of(ev, Notice) if n.level == "warning"]
+    brain.fail_verify = 2  # 两次都失败：提示学生这条没核对过
+    ev = await say(s, "循环队列怎么判空？")
+    assert of(ev, Verified) == []
+    assert "没能完成逐句核对" in of(ev, Notice)[0].text
+
+
+async def test_transcript_only_has_what_the_student_said(env: dict[str, Any]) -> None:
+    """真实验收发现：系统替学生补“这里没懂”“这章好了”，压缩摘要就把学生没说过的话当成了事实。"""
+    s = await open_session(env)
+    await say(s, "继续")
+    await say(s, "不知道")  # 检查题答错 → 同一轮里重讲
+    reteach = next(r for r in _tutor_requests(env) if "换一种讲法" in _last_user(r))
+    assert "学生说：不知道" in _last_user(reteach)
+    assert "这里没懂" not in _last_user(reteach)
+    first = _tutor_requests(env)[0]
+    assert "学生说：继续" in _last_user(first)
+    check = next(r for r in _tutor_requests(env) if "检查理解" in _last_user(r))
+    assert "学生说" not in _last_user(check)  # 同一轮的第二次调用：学生没有再说话
+
+
 async def test_segment_is_dropped_when_evidence_changed(env: dict[str, Any]) -> None:
     s = await open_session(env)
     await say(s, "继续")
