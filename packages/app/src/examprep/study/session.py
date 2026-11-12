@@ -199,6 +199,7 @@ class StudySession:
         self.segment_summary = segment_summary  # 本段开头的压缩摘要（L6）
         self.recap = ""  # 前几章小结，开新段时生成，段内不变
         self.compaction = compaction or CompactionPolicy()
+        self._input: str | None = None  # 学生这一轮的原话，第一次 Tutor 调用时用掉
         self.records = LearnerRecords(db, tenant=enrollment.tenant_id, user=enrollment.user_id)
         self.context_window = context_window
         self.verify_answers = verify_answers
@@ -339,6 +340,7 @@ class StudySession:
         yield self._suggestions()
 
     async def handle(self, text: str) -> AsyncIterator[StudyEvent]:
+        self._input = text.strip() or None
         if self.state == "SELF":
             async for ev in self._self_assess(text):
                 yield ev
@@ -452,8 +454,7 @@ class StudySession:
             extra = self._t(
                 f"本段配图已展示给学生：{listed}", f"Figures already shown to the student: {listed}"
             )
-        student = self._t("继续", "continue") if not retry else self._t("这里没懂", "I don't get it")
-        async for ev in self._tutor("reteach" if retry else "teach", task, chunks, student, extra=extra):
+        async for ev in self._tutor("reteach" if retry else "teach", task, chunks, extra=extra):
             yield ev
 
     async def _ask_check(self, k: int) -> AsyncIterator[StudyEvent]:
@@ -462,7 +463,6 @@ class StudySession:
             "check",
             prompts.check_question(self.course.language),
             self.parts[self.chapter][k],
-            "",
             verify=False,
             out=turn,
         ):
@@ -651,7 +651,7 @@ class StudySession:
         self.st["hint"] = level
         task = prompts.hint(self.course.language, level)
         extra = self._question_block(q, with_reference=True, hide_reference=True)
-        async for ev in self._tutor("hint", task, self._related(q), self._t("给个提示", "hint"), extra=extra):
+        async for ev in self._tutor("hint", task, self._related(q), extra=extra):
             yield ev
 
     async def _answer(self, intent: Intent) -> AsyncIterator[StudyEvent]:
@@ -824,9 +824,7 @@ class StudySession:
             + self._t("学生答案：", "Student answer: ")
             + guard.fence(answer or "（未作答）")
         )
-        async for ev in self._tutor(
-            "feedback", task, self._related(q), answer or self._t("看答案", "show answer"), extra=extra
-        ):
+        async for ev in self._tutor("feedback", task, self._related(q), extra=extra):
             yield ev
 
     def _question_block(self, q: m.Question, *, with_reference: bool, hide_reference: bool = False) -> str:
@@ -872,7 +870,7 @@ class StudySession:
             )
             return
         task = prompts.answer_question(self.course.language, text)
-        async for ev in self._tutor("answer", task, [h.chunk for h in hits[:ASK_HITS]], text):
+        async for ev in self._tutor("answer", task, [h.chunk for h in hits[:ASK_HITS]]):
             yield ev
 
     # ------------------------------------------------------------ 小结与换章
@@ -886,7 +884,7 @@ class StudySession:
         chunks = self.course.chunks.get(n, [])
         if chunks:
             task = prompts.wrapup(self.course.language, n, self.course.title(n))
-            async for ev in self._tutor("wrapup", task, chunks, self._t("这章好了", "done"), out=turn):
+            async for ev in self._tutor("wrapup", task, chunks, out=turn):
                 yield ev
             if turn.ok and turn.text.strip():
                 await self.records.add_note(self.enr.id, "summary", turn.text, n)
@@ -973,7 +971,6 @@ class StudySession:
         kind: TutorKind,
         task: str,
         chunks: Sequence[EvidenceChunk],
-        student: str,
         *,
         extra: str = "",
         verify: bool = True,
@@ -983,6 +980,10 @@ class StudySession:
         lang = self.course.language
         async for ev in self._prepare_segment():
             yield ev
+        # 只写学生这一轮真正说的话，而且只写进第一次 Tutor 调用；同一轮里系统接着做的动作（讲评后的小结、
+        # 答错检查题后的重讲）不冒充学生说话。真实验收发现：替学生补“这里没懂”“这章好了”，
+        # 模型的对话记录里就有学生没说过的话，压缩摘要会把它们当成事实记下来
+        student, self._input = self._input or "", None
         cmap = self.cmap.copy()  # 本轮成功后才提交新编号
         mats = materials(chunks, cmap, budget=self.evidence_budget, language=lang)
         row = self.progress[self.chapter]
@@ -1044,7 +1045,16 @@ class StudySession:
         final_raw = raw_text
         if verify and self.verify_answers and has_markers(raw_text):
             v = await verify_text(self.llm, raw_text, cmap, lang, self.timeout)
-            if v is not None:
+            if v.error is not None:
+                # 不能静默跳过：学生要知道这条没核对过
+                yield Notice(
+                    level="warning",
+                    text=self._t(
+                        "这条讲解没能完成逐句核对，带出处的句子可以点开原文对照。",
+                        "This reply could not be fact-checked; open the cited pages to compare.",
+                    ),
+                )
+            elif v.total:
                 final_raw = v.text
                 yield Verified(
                     total=v.total,
@@ -1255,9 +1265,16 @@ def restore_segment(
     )
 
 
+VERIFY_ATTEMPTS = 2  # 真实验收：60 次核对里有 2 次 30 秒超时（其余最长 12 秒），重试一次
+
+
 async def verify_text(
     llm: LLMClient, text: str, cmap: CitationMap, language: str, timeout: float
-) -> Verification | None:
-    """校验失败返回 None（不改动文本）。"""
-    v = await verify(llm, text, cmap, language=language, timeout=timeout)
-    return None if v.error is not None or v.total == 0 else v
+) -> Verification:
+    """逐句核对；失败（超时、模型出错）重试一次，仍失败时 ``error`` 不为空，文本不改动。"""
+    v = Verification(error="not run")
+    for _ in range(VERIFY_ATTEMPTS):
+        v = await verify(llm, text, cmap, language=language, timeout=timeout)
+        if v.error is None:
+            return v
+    return v
