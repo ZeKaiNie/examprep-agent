@@ -1,0 +1,526 @@
+:root {
+  --bg: #f7f7f5;
+  --panel: #ffffff;
+  --line: #e4e4e0;
+  --text: #1f2328;
+  --muted: #6b7078;
+  --accent: #2f6fde;
+  --accent-soft: #e8f0fd;
+  --good: #1a7f37;
+  --bad: #cf222e;
+  --warn: #9a6700;
+  --mark: #fff1a8;
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.65;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 6px;
+  padding: 0.3em 0.8em;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+input,
+textarea {
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5em 0.7em;
+  width: 100%;
+  background: var(--panel);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5em 1em;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.brand {
+  border: none;
+  font-weight: 600;
+  font-size: 1.05em;
+  padding: 0;
+}
+
+.brand span {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.85em;
+  margin-left: 0.6em;
+}
+
+.status,
+.meta,
+.hint-line {
+  color: var(--muted);
+  font-size: 0.88em;
+}
+
+/* 首页 */
+.home {
+  max-width: 52em;
+  margin: 2em auto;
+  padding: 0 1em;
+  width: 100%;
+  overflow: auto;
+}
+
+.course-list {
+  list-style: none;
+  padding: 0;
+}
+
+.course-list button {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 0.8em 1em;
+  margin-bottom: 0.5em;
+}
+
+.course-list .name {
+  font-weight: 600;
+}
+
+.ingest form {
+  display: grid;
+  gap: 0.7em;
+  max-width: 36em;
+}
+
+.ingest label {
+  display: grid;
+  gap: 0.2em;
+  font-size: 0.9em;
+}
+
+.ingest-log {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.7em;
+  max-height: 16em;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+/* 学习页：进度 | 对话 | 阅读器 */
+.study {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 15em 1fr;
+  min-height: 0;
+}
+
+.study.with-reader {
+  grid-template-columns: 15em 1fr 38%;
+}
+
+.progress {
+  border-right: 1px solid var(--line);
+  padding: 1em;
+  overflow: auto;
+  background: var(--panel);
+}
+
+.course-name {
+  font-weight: 600;
+}
+
+.chapters {
+  list-style: none;
+  padding: 0;
+  margin: 1em 0;
+}
+
+.chapters li {
+  padding: 0.4em 0.5em;
+  border-radius: 6px;
+  margin-bottom: 0.3em;
+}
+
+.chapters li.current {
+  background: var(--accent-soft);
+}
+
+.ch-meta {
+  display: flex;
+  gap: 0.6em;
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+.status.verified {
+  color: var(--good);
+}
+
+.status.teaching {
+  color: var(--accent);
+}
+
+.context .label {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+.bar {
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  margin: 0.3em 0 0.6em;
+  overflow: hidden;
+}
+
+.bar > div {
+  height: 100%;
+  background: var(--accent);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.chat-top {
+  padding: 0.4em 1em;
+}
+
+.link {
+  border: none;
+  color: var(--accent);
+  padding: 0;
+  background: none;
+}
+
+.items {
+  flex: 1;
+  overflow: auto;
+  padding: 0 1.2em 1em;
+}
+
+.msg {
+  max-width: 48em;
+  margin: 0.8em 0;
+}
+
+.msg.student {
+  margin-left: auto;
+  width: fit-content;
+  max-width: 70%;
+  background: var(--accent);
+  color: white;
+  padding: 0.5em 0.9em;
+  border-radius: 12px 12px 2px 12px;
+  white-space: pre-wrap;
+}
+
+.msg.tutor {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6em 1em;
+}
+
+.msg.streaming {
+  border-style: dashed;
+}
+
+.msg-head {
+  font-size: 0.78em;
+  color: var(--muted);
+}
+
+.msg-foot {
+  font-size: 0.78em;
+  color: var(--muted);
+  border-top: 1px dashed var(--line);
+  margin-top: 0.5em;
+  padding-top: 0.3em;
+}
+
+.md.plain {
+  white-space: pre-wrap;
+}
+
+.md table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+}
+
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 0.2em 0.6em;
+}
+
+.md pre {
+  background: #f3f3f1;
+  padding: 0.6em;
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.md code {
+  background: #f3f3f1;
+  padding: 0 0.25em;
+  border-radius: 3px;
+}
+
+/* 资料以外的补充：更轻。整段是补充时左边加一条线；段落中间的补充句只变淡 */
+.md .extra {
+  color: var(--muted);
+  border-left: 3px solid #f0d77a;
+  padding-left: 0.6em;
+}
+
+.md .extra-inline {
+  color: var(--muted);
+}
+
+.cite {
+  border: none;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0 0.35em;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.card {
+  max-width: 48em;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.7em 1em;
+  margin: 0.8em 0;
+  background: var(--panel);
+}
+
+.card-head {
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.card-head .src {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.stem {
+  white-space: pre-wrap;
+  margin: 0.4em 0;
+}
+
+.options {
+  list-style: none;
+  padding-left: 0.5em;
+}
+
+.graded.good {
+  border-left: 4px solid var(--good);
+}
+
+.graded.bad {
+  border-left: 4px solid var(--bad);
+}
+
+.graded.warn {
+  border-left: 4px solid var(--warn);
+}
+
+.reference {
+  margin-top: 0.5em;
+  background: #fafaf8;
+  border-radius: 6px;
+  padding: 0.5em 0.7em;
+}
+
+.reference .label,
+.unplaced .label {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+.ref-text {
+  white-space: pre-wrap;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  margin: 0.5em 0;
+}
+
+.figures img {
+  max-width: 22em;
+  max-height: 16em;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.figures figcaption {
+  font-size: 0.75em;
+  color: var(--muted);
+}
+
+.notice {
+  max-width: 48em;
+  margin: 0.6em 0;
+  font-size: 0.9em;
+  padding: 0.4em 0.8em;
+  border-radius: 6px;
+  background: #f1f1ee;
+}
+
+.notice.warning {
+  background: #fff8e1;
+  color: var(--warn);
+}
+
+.notice.error {
+  background: #ffebe9;
+  color: var(--bad);
+}
+
+.note,
+.thinking {
+  font-size: 0.8em;
+  color: var(--muted);
+  margin: 0.3em 0;
+}
+
+.milestone {
+  text-align: center;
+  margin: 1em 0;
+  font-weight: 600;
+}
+
+.compacted {
+  max-width: 48em;
+  font-size: 0.88em;
+  color: var(--muted);
+  margin: 0.8em 0;
+}
+
+.composer {
+  border-top: 1px solid var(--line);
+  padding: 0.6em 1.2em 0.9em;
+  background: var(--panel);
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin-bottom: 0.5em;
+  align-items: center;
+}
+
+.composer form {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-end;
+}
+
+.composer textarea {
+  resize: none;
+  flex: 1;
+}
+
+.composer form > button {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* 阅读器 */
+.reader {
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+}
+
+.reader header {
+  padding: 0.5em 0.8em;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.reader .title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader .tools {
+  display: flex;
+  gap: 0.4em;
+  align-items: center;
+  font-size: 0.88em;
+}
+
+.reader-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0.8em;
+}
+
+.page-text {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+}
+
+.page-text mark {
+  background: var(--mark);
+  border-radius: 2px;
+}
+
+.page-image {
+  max-width: 100%;
+  border: 1px solid var(--line);
+}
+
+.unplaced blockquote {
+  background: var(--mark);
+  margin: 0.4em 0;
+  padding: 0.4em 0.7em;
+}

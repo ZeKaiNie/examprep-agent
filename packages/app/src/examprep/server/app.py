@@ -397,6 +397,8 @@ def create_app(
             "context_tokens": s.segment_tokens(),
             "compact_limit": s.compact_limit(),
             "auto_compact": s.compaction.auto,
+            # 处理中不读进度：会话状态正在变
+            "progress": None if live.busy else (await s.progress_report()).model_dump(mode="json"),
         }
 
     @app.get("/api/study/{cid}/transcript")

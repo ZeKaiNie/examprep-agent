@@ -35,3 +35,25 @@ jobs:
         run: uv run pyright --pythonversion ${{ matrix.python }}
       - name: pytest
         run: uv run pytest --cov --cov-report=term --cov-fail-under=85
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查
+        run: npm run typecheck
+      - name: 测试
+        run: npm test
+      - name: 构建
+        run: npm run build

@@ -920,6 +920,10 @@ class StudySession:
 
     # ------------------------------------------------------------ 进度与建议
 
+    async def progress_report(self) -> ProgressReport:
+        """当前进度（网页每轮结束后刷新左侧面板用）。"""
+        return await self._progress_report()
+
     async def _progress_report(self) -> ProgressReport:
         verdicts = await self.records.last_verdicts(self.enr.id)
         rows: list[ChapterRow] = []

@@ -307,6 +307,8 @@ async def test_study_flow_transcript_and_state(client: Client) -> None:
         "check",
     )
     assert 0 < st["context_tokens"] < st["compact_limit"]
+    assert st["progress"]["type"] == "progress"
+    assert st["progress"]["chapters"][0]["status"] == "teaching"  # 讲过一段，进度已更新
 
     ui = (await http.get(f"/api/study/{cid}/transcript")).json()
     assert ui[0] == {"seq": ui[0]["seq"], "role": "student", "text": "继续"}
